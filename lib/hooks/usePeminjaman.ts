@@ -10,66 +10,136 @@ import {
   Peminjaman,
 } from '@/lib/data/peminjaman';
 
-// Semua peminjaman
 export function usePeminjaman() {
   const [data, setData] = useState<Peminjaman[]>([]);
 
+  const refresh = () => setData(getPeminjaman());
+
   useEffect(() => {
-    setData(getPeminjaman());
-    const unsubscribe = subscribePeminjaman(() => setData(getPeminjaman()));
-    return unsubscribe;
+    refresh();
+    const unsubscribe = subscribePeminjaman(refresh);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_peminjaman') refresh();
+    };
+    const handleCustom = () => refresh();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, []);
 
   return data;
 }
 
-// Peminjaman Menunggu Konfirmasi
 export function usePeminjamanMenunggu() {
   const [data, setData] = useState<Peminjaman[]>([]);
 
+  const refresh = () => setData(getPeminjamanMenunggu());
+
   useEffect(() => {
-    setData(getPeminjamanMenunggu());
-    const unsubscribe = subscribePeminjaman(() => setData(getPeminjamanMenunggu()));
-    return unsubscribe;
+    refresh();
+    const unsubscribe = subscribePeminjaman(refresh);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_peminjaman') refresh();
+    };
+    const handleCustom = () => refresh();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, []);
 
   return data;
 }
 
-// Peminjaman Aktif
 export function usePeminjamanAktif() {
   const [data, setData] = useState<Peminjaman[]>([]);
 
+  const refresh = () => setData(getPeminjamanAktif());
+
   useEffect(() => {
-    setData(getPeminjamanAktif());
-    const unsubscribe = subscribePeminjaman(() => setData(getPeminjamanAktif()));
-    return unsubscribe;
+    refresh();
+    const unsubscribe = subscribePeminjaman(refresh);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_peminjaman') refresh();
+    };
+    const handleCustom = () => refresh();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, []);
 
   return data;
 }
 
-// By ID
 export function usePeminjamanById(id: string) {
   const [data, setData] = useState<Peminjaman | undefined>();
 
+  const refresh = () => setData(getPeminjamanById(id));
+
   useEffect(() => {
-    setData(getPeminjamanById(id));
-    const unsubscribe = subscribePeminjaman(() => setData(getPeminjamanById(id)));
-    return unsubscribe;
+    refresh();
+    const unsubscribe = subscribePeminjaman(refresh);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_peminjaman') refresh();
+    };
+    const handleCustom = () => refresh();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, [id]);
 
   return data;
 }
 
-// By Kode
 export function usePeminjamanByKode(kode: string) {
   const [data, setData] = useState<Peminjaman | undefined>();
 
+  const refresh = () => setData(getPeminjamanByKode(kode));
+
   useEffect(() => {
-    setData(getPeminjamanByKode(kode));
-    const unsubscribe = subscribePeminjaman(() => setData(getPeminjamanByKode(kode)));
-    return unsubscribe;
+    refresh();
+    const unsubscribe = subscribePeminjaman(refresh);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_peminjaman') refresh();
+    };
+    const handleCustom = () => refresh();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, [kode]);
 
   return data;

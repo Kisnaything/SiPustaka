@@ -2,37 +2,69 @@
 import { useEffect, useState } from 'react';
 import { getBooks, getBookById, subscribe, Buku } from '@/lib/data/buku';
 
-// Hook untuk daftar semua buku (reaktif)
+// Hook untuk semua buku
 export function useBuku() {
   const [books, setBooks] = useState<Buku[]>([]);
 
-  useEffect(() => {
-    // Ambil data awal
+  const refresh = () => {
     setBooks(getBooks());
+  };
 
-    // Subscribe ke perubahan
-    const unsubscribe = subscribe(() => {
-      setBooks(getBooks());
-    });
+  useEffect(() => {
+    refresh();
 
-    return unsubscribe;
+    const unsubscribe = subscribe(refresh);
+
+    // Listener untuk storage event (sinkron antar tab)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_buku') {
+        refresh();
+      }
+    };
+
+    // Juga tangkap event custom yang kita dispatch dari add/update/delete
+    const handleCustom = () => refresh();
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, []);
 
   return books;
 }
 
-// Hook untuk satu buku berdasarkan id (reaktif)
+// Hook untuk satu buku (by id)
 export function useBukuById(id: string) {
-  const [book, setBook] = useState<Buku | undefined>();
+  const [book, setBook] = useState<Buku | undefined>(undefined);
+
+  const refresh = () => {
+    setBook(getBookById(id));
+  };
 
   useEffect(() => {
-    setBook(getBookById(id));
+    refresh();
 
-    const unsubscribe = subscribe(() => {
-      setBook(getBookById(id));
-    });
+    const unsubscribe = subscribe(refresh);
 
-    return unsubscribe;
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'sipustaka_buku') {
+        refresh();
+      }
+    };
+    const handleCustom = () => refresh();
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('custom-storage-update', handleCustom);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('custom-storage-update', handleCustom);
+    };
   }, [id]);
 
   return book;

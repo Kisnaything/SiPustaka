@@ -1,5 +1,4 @@
 // lib/data/buku.ts
-
 export interface Buku {
   id: string;
   judul: string;
@@ -10,13 +9,15 @@ export interface Buku {
   cetakan: string;
   isbn: string;
   stok: number;
-  cover: string | null;   // base64 atau URL nanti
-  preview: string | null; // base64 PDF preview (6-7 halaman pertama)
+  cover: string | null;
+  preview: string | null;
   sinopsis: string;
 }
 
-// ---------- DATA DUMMY AWAL ----------
-const initialBooks: Buku[] = [
+const STORAGE_KEY = 'sipustaka_buku';
+
+// Data default jika localStorage kosong
+const defaultBooks: Buku[] = [
   {
     id: '1',
     judul: 'Bumi Manusia',
@@ -103,13 +104,34 @@ const initialBooks: Buku[] = [
   },
 ];
 
-// ---------- IN-MEMORY STORE ----------
-let books: Buku[] = [...initialBooks];
+// Fungsi untuk baca dari localStorage
+function loadBooks(): Buku[] {
+  if (typeof window === 'undefined') return defaultBooks;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) {
+    // Inisialisasi dengan default jika belum ada
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultBooks));
+    return defaultBooks;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return defaultBooks;
+  }
+}
 
-// Array listener untuk subscribe (agar komponen bisa re-render otomatis)
+// Fungsi simpan ke localStorage
+function saveBooks(books: Buku[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+}
+
+// In-memory cache (untuk performa, tapi selalu sync dengan localStorage)
+let books: Buku[] = loadBooks();
+
+// ─── Subscribe ─────────────────────────────────────────────
 let listeners: (() => void)[] = [];
 
-// ---------- SUBSCRIBE ----------
 export function subscribe(listener: () => void) {
   listeners.push(listener);
   return () => {
@@ -121,15 +143,18 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
-// ---------- CRUD FUNCTIONS ----------
+// ─── CRUD ──────────────────────────────────────────────────
 
 // Ambil semua buku
 export function getBooks(): Buku[] {
+  // Selalu reload dari localStorage untuk memastikan data terbaru
+  books = loadBooks();
   return books;
 }
 
 // Ambil satu buku berdasarkan id
 export function getBookById(id: string): Buku | undefined {
+  books = loadBooks();
   return books.find((b) => b.id === id);
 }
 
@@ -138,11 +163,16 @@ export function addBook(book: Omit<Buku, 'id'>): Buku {
   const newId = String(Date.now());
   const newBook: Buku = { ...book, id: newId };
   books = [...books, newBook];
+  saveBooks(books);
   notify();
+  // Trigger storage event agar tab lain sinkron
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('storage'));
+  }
   return newBook;
 }
 
-// Update buku (hanya field yang dikirim)
+// Update buku
 export function updateBook(id: string, data: Partial<Buku>): Buku | null {
   let updatedBook: Buku | null = null;
   books = books.map((b) => {
@@ -152,18 +182,32 @@ export function updateBook(id: string, data: Partial<Buku>): Buku | null {
     }
     return b;
   });
-  if (updatedBook) notify();
+  if (updatedBook) {
+    saveBooks(books);
+    notify();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+    }
+  }
   return updatedBook;
 }
 
 // Hapus buku
 export function deleteBook(id: string): void {
   books = books.filter((b) => b.id !== id);
+  saveBooks(books);
   notify();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('storage'));
+  }
 }
 
-// Reset ke data awal (untuk testing)
+// Reset ke default (untuk testing)
 export function resetBooks(): void {
-  books = [...initialBooks];
+  books = [...defaultBooks];
+  saveBooks(books);
   notify();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('storage'));
+  }
 }

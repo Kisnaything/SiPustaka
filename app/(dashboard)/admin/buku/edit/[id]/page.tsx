@@ -28,6 +28,7 @@ export default function EditBukuPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewInputRef = useRef<HTMLInputElement>(null);
 
+  // ─── State form ───
   const [stok, setStok] = useState(0);
   const [kondisi, setKondisi] = useState<Kondisi>('Baik');
   const [judul, setJudul] = useState('');
@@ -39,17 +40,17 @@ export default function EditBukuPage() {
   const [sinopsis, setSinopsis] = useState('');
   const [kodeRak, setKodeRak] = useState('');
 
-  // State cover
+  // ─── State cover ───
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverBase64, setCoverBase64] = useState<string | null>(null);
   const [coverChanged, setCoverChanged] = useState(false);
 
-  // State preview PDF
+  // ─── State preview PDF ───
   const [previewBase64, setPreviewBase64] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState<string | null>(null);
   const [previewChanged, setPreviewChanged] = useState(false);
-  const [hasExistingPreview, setHasExistingPreview] = useState(false);
 
+  // ─── Load data buku ───
   useEffect(() => {
     if (book) {
       setJudul(book.judul);
@@ -66,13 +67,12 @@ export default function EditBukuPage() {
       }
       if (book.preview) {
         setPreviewBase64(book.preview);
-        setHasExistingPreview(true);
         setPreviewName('Preview.pdf');
       }
     }
   }, [book]);
 
-  // ─── Cover Handlers ───
+  // ─── Cover handlers ───
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -99,25 +99,26 @@ export default function EditBukuPage() {
     }
   };
 
-  // ─── Preview Handlers ───
+  // ─── Preview handlers ───
   const handlePreviewChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     if (file.type !== 'application/pdf') {
-      alert('Hanya file PDF yang diperbolehkan');
+      alert('Hanya file PDF yang diperbolehkan untuk preview');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       alert('Ukuran file maksimal 5MB');
       return;
     }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
       setPreviewBase64(result);
       setPreviewName(file.name);
       setPreviewChanged(true);
-      setHasExistingPreview(true);
     };
     reader.readAsDataURL(file);
   };
@@ -126,12 +127,12 @@ export default function EditBukuPage() {
     setPreviewBase64(null);
     setPreviewName(null);
     setPreviewChanged(true);
-    setHasExistingPreview(false);
     if (previewInputRef.current) {
       previewInputRef.current.value = '';
     }
   };
 
+  // ─── Submit ───
   if (!book) {
     return <div className="p-6">Buku tidak ditemukan</div>;
   }
@@ -347,7 +348,7 @@ export default function EditBukuPage() {
                       {previewName || 'Preview.pdf'}
                     </p>
                     <p className="text-[11px] text-[#9CA3AF]">
-                      {hasExistingPreview && !previewChanged ? 'Preview tersimpan' : 'PDF siap diunggah'}
+                      {previewChanged ? 'PDF siap diunggah' : 'Preview tersimpan'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -397,7 +398,9 @@ export default function EditBukuPage() {
             </div>
 
             <div className="mt-4">
-              <label className="text-[13px] font-semibold text-[#374151]">Jumlah Stok</label>
+              <label className="text-[13px] font-semibold text-[#374151]">
+                Jumlah Stok
+              </label>
               <div className="flex items-center mt-1.5 border border-[#E5E7EB] rounded-lg overflow-hidden">
                 <button
                   onClick={() => setStok((s) => Math.max(0, s - 1))}
@@ -432,7 +435,9 @@ export default function EditBukuPage() {
             </div>
 
             <div className="mt-4">
-              <label className="text-[13px] font-semibold text-[#374151]">Kondisi Buku</label>
+              <label className="text-[13px] font-semibold text-[#374151]">
+                Kondisi Buku
+              </label>
               <div className="grid grid-cols-3 gap-2 mt-1.5">
                 {(['Baru', 'Baik', 'Rusak'] as Kondisi[]).map((k) => (
                   <button
@@ -453,6 +458,7 @@ export default function EditBukuPage() {
         </div>
       </div>
 
+      {/* ─── Actions ─── */}
       <div className="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-[#E5E7EB]">
         <Link
           href="/admin/buku"

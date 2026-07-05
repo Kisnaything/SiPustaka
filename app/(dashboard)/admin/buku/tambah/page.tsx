@@ -23,7 +23,7 @@ export default function TambahBukuPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewInputRef = useRef<HTMLInputElement>(null);
 
-  // State form...
+  // ─── State form ───
   const [judul, setJudul] = useState('');
   const [penulis, setPenulis] = useState('');
   const [penerbit, setPenerbit] = useState('');
@@ -35,16 +35,15 @@ export default function TambahBukuPage() {
   const [stok, setStok] = useState(1);
   const [kondisi, setKondisi] = useState<Kondisi>('Baru');
 
-  // State cover
+  // ─── State cover ───
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverBase64, setCoverBase64] = useState<string | null>(null);
 
-  // State preview PDF
-  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  // ─── State preview PDF ───
   const [previewBase64, setPreviewBase64] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState<string | null>(null);
 
-  // ─── Cover Handlers ───
+  // ─── Cover handlers ───
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -69,18 +68,15 @@ export default function TambahBukuPage() {
     }
   };
 
-  // ─── Preview PDF Handlers ───
+  // ─── Preview handlers ───
   const handlePreviewChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validasi: hanya PDF
     if (file.type !== 'application/pdf') {
       alert('Hanya file PDF yang diperbolehkan untuk preview');
       return;
     }
-
-    // Validasi ukuran (maks 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Ukuran file maksimal 5MB');
       return;
@@ -93,13 +89,11 @@ export default function TambahBukuPage() {
       setPreviewName(file.name);
     };
     reader.readAsDataURL(file);
-    setPreviewFile(file);
   };
 
   const handleRemovePreview = () => {
     setPreviewBase64(null);
     setPreviewName(null);
-    setPreviewFile(null);
     if (previewInputRef.current) {
       previewInputRef.current.value = '';
     }
@@ -122,7 +116,7 @@ export default function TambahBukuPage() {
       isbn: isbn || '000-000-000-0',
       stok,
       cover: coverBase64,
-      preview: previewBase64, // ← Simpan base64 PDF
+      preview: previewBase64, // ← ini yang penting
       sinopsis: sinopsis || 'Tidak ada sinopsis',
     };
 
@@ -155,7 +149,6 @@ export default function TambahBukuPage() {
       <div className="grid grid-cols-[1fr_340px] gap-6 mt-6">
         {/* ─── LEFT: Main Form ─── */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 space-y-5">
-          {/* Judul */}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
               Judul Lengkap Buku <span className="text-red-500">*</span>
@@ -168,7 +161,6 @@ export default function TambahBukuPage() {
             />
           </div>
 
-          {/* Penulis + Penerbit */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#374151]">
@@ -194,7 +186,6 @@ export default function TambahBukuPage() {
             </div>
           </div>
 
-          {/* Tahun + ISBN */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#374151]">
@@ -220,7 +211,6 @@ export default function TambahBukuPage() {
             </div>
           </div>
 
-          {/* Kategori */}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
               Kategori <span className="text-red-500">*</span>
@@ -247,7 +237,6 @@ export default function TambahBukuPage() {
             </div>
           </div>
 
-          {/* Sinopsis */}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
               Sinopsis / Deskripsi Singkat
@@ -256,7 +245,7 @@ export default function TambahBukuPage() {
               value={sinopsis}
               onChange={(e) => setSinopsis(e.target.value)}
               placeholder="Tuliskan ringkasan isi buku di sini..."
-              rows={4}
+              rows={5}
               className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30 resize-none"
             />
           </div>
@@ -435,7 +424,7 @@ export default function TambahBukuPage() {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* ─── Actions ─── */}
       <div className="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-[#E5E7EB]">
         <Link
           href="/admin/buku"

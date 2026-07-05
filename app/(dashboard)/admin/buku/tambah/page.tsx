@@ -1,14 +1,134 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { ImagePlus, Archive, Minus, Plus, Save, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useRef } from 'react';
+import {
+  ImagePlus,
+  Archive,
+  Minus,
+  Plus,
+  Save,
+  ChevronDown,
+  X,
+  FileText,
+  Eye,
+} from 'lucide-react';
+import { addBook } from '@/lib/data/buku';
 
 type Kondisi = 'Baru' | 'Baik' | 'Rusak';
 
 export default function TambahBukuPage() {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewInputRef = useRef<HTMLInputElement>(null);
+
+  // State form...
+  const [judul, setJudul] = useState('');
+  const [penulis, setPenulis] = useState('');
+  const [penerbit, setPenerbit] = useState('');
+  const [tahun, setTahun] = useState('');
+  const [isbn, setIsbn] = useState('');
+  const [kategori, setKategori] = useState('');
+  const [sinopsis, setSinopsis] = useState('');
+  const [kodeRak, setKodeRak] = useState('');
   const [stok, setStok] = useState(1);
   const [kondisi, setKondisi] = useState<Kondisi>('Baru');
+
+  // State cover
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverBase64, setCoverBase64] = useState<string | null>(null);
+
+  // State preview PDF
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
+  const [previewName, setPreviewName] = useState<string | null>(null);
+
+  // ─── Cover Handlers ───
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Hanya file gambar (JPG, PNG) yang diperbolehkan');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setCoverPreview(result);
+      setCoverBase64(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCover = () => {
+    setCoverPreview(null);
+    setCoverBase64(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // ─── Preview PDF Handlers ───
+  const handlePreviewChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validasi: hanya PDF
+    if (file.type !== 'application/pdf') {
+      alert('Hanya file PDF yang diperbolehkan untuk preview');
+      return;
+    }
+
+    // Validasi ukuran (maks 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran file maksimal 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setPreviewBase64(result);
+      setPreviewName(file.name);
+    };
+    reader.readAsDataURL(file);
+    setPreviewFile(file);
+  };
+
+  const handleRemovePreview = () => {
+    setPreviewBase64(null);
+    setPreviewName(null);
+    setPreviewFile(null);
+    if (previewInputRef.current) {
+      previewInputRef.current.value = '';
+    }
+  };
+
+  // ─── Submit ───
+  const handleSubmit = () => {
+    if (!judul || !penulis || !kategori) {
+      alert('Harap lengkapi field yang wajib (judul, penulis, kategori)');
+      return;
+    }
+
+    const newBook = {
+      judul,
+      penulis,
+      kategori,
+      penerbit: penerbit || 'Unknown',
+      tahun: parseInt(tahun) || new Date().getFullYear(),
+      cetakan: 'Ke-1',
+      isbn: isbn || '000-000-000-0',
+      stok,
+      cover: coverBase64,
+      preview: previewBase64, // ← Simpan base64 PDF
+      sinopsis: sinopsis || 'Tidak ada sinopsis',
+    };
+
+    addBook(newBook);
+    router.push('/admin/buku');
+  };
 
   return (
     <div>
@@ -31,26 +151,32 @@ export default function TambahBukuPage() {
         </p>
       </div>
 
-      {/* Layout: form + side panel */}
-      <div className="grid grid-cols-[1fr_320px] gap-6 mt-6">
-        {/* Left: main form */}
+      {/* Layout: 2 columns */}
+      <div className="grid grid-cols-[1fr_340px] gap-6 mt-6">
+        {/* ─── LEFT: Main Form ─── */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 space-y-5">
+          {/* Judul */}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
-              Judul Lengkap Buku
+              Judul Lengkap Buku <span className="text-red-500">*</span>
             </label>
             <input
+              value={judul}
+              onChange={(e) => setJudul(e.target.value)}
               placeholder="Contoh: Atomic Habits: Perubahan Kecil yang Memberikan Hasil Luar Biasa"
               className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
             />
           </div>
 
+          {/* Penulis + Penerbit */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#374151]">
-                Penulis / Pengarang
+                Penulis / Pengarang <span className="text-red-500">*</span>
               </label>
               <input
+                value={penulis}
+                onChange={(e) => setPenulis(e.target.value)}
                 placeholder="Nama penulis"
                 className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               />
@@ -60,18 +186,23 @@ export default function TambahBukuPage() {
                 Penerbit
               </label>
               <input
+                value={penerbit}
+                onChange={(e) => setPenerbit(e.target.value)}
                 placeholder="Nama penerbit"
                 className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               />
             </div>
           </div>
 
+          {/* Tahun + ISBN */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#374151]">
                 Tahun Terbit
               </label>
               <input
+                value={tahun}
+                onChange={(e) => setTahun(e.target.value)}
                 placeholder="2024"
                 className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               />
@@ -81,23 +212,33 @@ export default function TambahBukuPage() {
                 ISBN / ISSN
               </label>
               <input
+                value={isbn}
+                onChange={(e) => setIsbn(e.target.value)}
                 placeholder="978-602-06-3317-6"
                 className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               />
             </div>
           </div>
 
+          {/* Kategori */}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
-              Kategori
+              Kategori <span className="text-red-500">*</span>
             </label>
             <div className="relative mt-1.5">
-              <select className="w-full appearance-none text-[14px] text-[#585F6C] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30">
-                <option>Pilih kategori buku</option>
-                <option>Sains &amp; Tek</option>
-                <option>Self Improvement</option>
-                <option>Bisnis</option>
-                <option>Sejarah</option>
+              <select
+                value={kategori}
+                onChange={(e) => setKategori(e.target.value)}
+                className="w-full appearance-none text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
+              >
+                <option value="">Pilih kategori buku</option>
+                <option value="Sains & Tek">Sains &amp; Tek</option>
+                <option value="Self Improvement">Self Improvement</option>
+                <option value="Bisnis">Bisnis</option>
+                <option value="Sejarah">Sejarah</option>
+                <option value="Sastra Indonesia">Sastra Indonesia</option>
+                <option value="Puisi">Puisi</option>
+                <option value="Fiksi Ilmiah">Fiksi Ilmiah</option>
               </select>
               <ChevronDown
                 size={16}
@@ -106,33 +247,124 @@ export default function TambahBukuPage() {
             </div>
           </div>
 
+          {/* Sinopsis */}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
               Sinopsis / Deskripsi Singkat
             </label>
             <textarea
+              value={sinopsis}
+              onChange={(e) => setSinopsis(e.target.value)}
               placeholder="Tuliskan ringkasan isi buku di sini..."
-              rows={5}
+              rows={4}
               className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30 resize-none"
             />
           </div>
         </div>
 
-        {/* Right: cover + inventory */}
+        {/* ─── RIGHT: Cover + Preview + Inventory ─── */}
         <div className="space-y-5">
           {/* Sampul Buku */}
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
-            <h2 className="text-[15px] font-bold text-[#111827]">Sampul Buku</h2>
-            <label className="mt-3.5 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#E5E7EB] rounded-xl h-[220px] cursor-pointer hover:border-[#F5A623]/60 transition-colors">
-              <input type="file" accept="image/*" className="hidden" />
-              <ImagePlus size={28} className="text-[#9CA3AF]" strokeWidth={1.5} />
-              <p className="text-[13px] text-[#585F6C] text-center px-6">
-                Tarik gambar ke sini atau klik untuk unggah
-              </p>
-            </label>
-            <p className="text-[12px] text-[#9CA3AF] text-center mt-2">
-              Rekomendasi: 800x1200px (JPG/PNG)
+            <h2 className="text-[15px] font-bold text-[#111827] flex items-center gap-2">
+              <ImagePlus size={18} className="text-[#B45309]" />
+              Sampul Buku
+            </h2>
+            <div className="mt-3.5 relative">
+              {coverPreview ? (
+                <div className="relative">
+                  <img
+                    src={coverPreview}
+                    alt="Cover preview"
+                    className="w-full h-[200px] object-cover rounded-xl border border-[#E5E7EB]"
+                  />
+                  <button
+                    onClick={handleRemoveCover}
+                    className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                  >
+                    <X size={16} className="text-[#585F6C]" />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="cover-upload"
+                  className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#E5E7EB] rounded-xl h-[200px] cursor-pointer hover:border-[#F5A623]/60 transition-colors"
+                >
+                  <ImagePlus size={28} className="text-[#9CA3AF]" strokeWidth={1.5} />
+                  <p className="text-[13px] text-[#585F6C] text-center px-6">
+                    Tarik gambar ke sini atau klik untuk unggah
+                  </p>
+                  <p className="text-[11px] text-[#9CA3AF]">Rekomendasi: 800×1200px (JPG/PNG)</p>
+                </label>
+              )}
+              <input
+                ref={fileInputRef}
+                id="cover-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleCoverChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* ─── PREVIEW PDF ─── */}
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
+            <h2 className="text-[15px] font-bold text-[#111827] flex items-center gap-2">
+              <FileText size={18} className="text-[#B45309]" />
+              Preview Buku (PDF)
+            </h2>
+            <p className="text-[12px] text-[#9CA3AF] mt-1">
+              Upload 6-7 halaman pertama buku dalam format PDF
             </p>
+
+            <div className="mt-3.5">
+              {previewBase64 ? (
+                <div className="flex items-center gap-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-3">
+                  <FileText size={24} className="text-[#B45309]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#111827] truncate">
+                      {previewName || 'Preview.pdf'}
+                    </p>
+                    <p className="text-[11px] text-[#9CA3AF]">PDF siap diunggah</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => window.open(previewBase64, '_blank')}
+                      className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
+                      title="Lihat preview"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={handleRemovePreview}
+                      className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor="preview-upload"
+                  className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#E5E7EB] rounded-xl h-[100px] cursor-pointer hover:border-[#F5A623]/60 transition-colors"
+                >
+                  <FileText size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
+                  <p className="text-[13px] text-[#585F6C] text-center px-6">
+                    Klik untuk unggah PDF preview
+                  </p>
+                  <p className="text-[11px] text-[#9CA3AF]">Maks. 5MB</p>
+                </label>
+              )}
+              <input
+                ref={previewInputRef}
+                id="preview-upload"
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={handlePreviewChange}
+                className="hidden"
+              />
+            </div>
           </div>
 
           {/* Inventaris */}
@@ -172,6 +404,8 @@ export default function TambahBukuPage() {
                 Kode Rak / Lokasi
               </label>
               <input
+                value={kodeRak}
+                onChange={(e) => setKodeRak(e.target.value)}
                 placeholder="Contoh: A1-04"
                 className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               />
@@ -209,7 +443,10 @@ export default function TambahBukuPage() {
         >
           Batal
         </Link>
-        <button className="flex items-center gap-2 bg-[#B45309] hover:bg-[#92400E] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm">
+        <button
+          onClick={handleSubmit}
+          className="flex items-center gap-2 bg-[#B45309] hover:bg-[#92400E] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm"
+        >
           <Save size={17} />
           Simpan Buku
         </button>

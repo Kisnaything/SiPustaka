@@ -20,7 +20,6 @@ const tahunList = ['Semua', '1980–1999', '2000–2009', '2010–sekarang']
 
 type Buku = typeof dummyBuku[0]
 
-// Warna placeholder cover buku
 const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B']
 
 export default function KatalogPage() {
@@ -60,26 +59,20 @@ export default function KatalogPage() {
   })
 
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh',
-      fontFamily: "'Plus Jakarta Sans', sans-serif",
-    }}>
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+
       {/* Konten utama */}
       <div style={{ flex: 1, padding: '24px 28px', minWidth: 0 }}>
 
-        {/* Label halaman */}
         <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '20px' }}>
           Katalog Buku
         </p>
 
         {/* Search bar */}
         <div style={{ position: 'relative', marginBottom: '16px' }}>
-          <svg
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+          <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
             width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-          >
+            stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
           <input
@@ -88,43 +81,28 @@ export default function KatalogPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              width: '100%',
-              padding: '10px 12px 10px 40px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              fontSize: '14px',
-              color: '#111827',
-              outline: 'none',
-              boxSizing: 'border-box',
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              width: '100%', padding: '10px 12px 10px 40px',
+              border: '1px solid #E5E7EB', borderRadius: '8px',
+              fontSize: '14px', color: '#111827', outline: 'none',
+              boxSizing: 'border-box', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#F5A623'
-              e.target.style.boxShadow = '0 0 0 3px rgba(245,166,35,0.15)'
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#E5E7EB'
-              e.target.style.boxShadow = 'none'
-            }}
+            onFocus={(e) => { e.target.style.borderColor = '#F5A623'; e.target.style.boxShadow = '0 0 0 3px rgba(245,166,35,0.15)' }}
+            onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none' }}
           />
         </div>
 
         {/* Filter bar */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+
           {/* Kategori dropdown */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => { setShowKategoriDropdown(!showKategoriDropdown); setShowTahunDropdown(false) }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 14px',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                backgroundColor: '#FFFFFF',
-                fontSize: '14px',
-                color: '#374151',
-                cursor: 'pointer',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                padding: '8px 14px', border: '1px solid #E5E7EB', borderRadius: '8px',
+                backgroundColor: '#FFFFFF', fontSize: '14px', color: '#374151',
+                cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
               {kategori === 'Semua' ? 'Kategori' : kategori}
@@ -135,16 +113,12 @@ export default function KatalogPage() {
             {showKategoriDropdown && (
               <div style={{
                 position: 'absolute', top: '100%', left: 0, zIndex: 10,
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                marginTop: '4px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                minWidth: '140px',
+                backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB',
+                borderRadius: '8px', marginTop: '4px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: '140px',
               }}>
                 {kategoriList.map((k) => (
-                  <button
-                    key={k}
+                  <button key={k}
                     onClick={() => { setKategori(k); setShowKategoriDropdown(false) }}
                     style={{
                       display: 'block', width: '100%', textAlign: 'left',
@@ -154,9 +128,7 @@ export default function KatalogPage() {
                       fontSize: '14px', cursor: 'pointer',
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
-                  >
-                    {k}
-                  </button>
+                  >{k}</button>
                 ))}
               </div>
             )}
@@ -168,14 +140,9 @@ export default function KatalogPage() {
               onClick={() => { setShowTahunDropdown(!showTahunDropdown); setShowKategoriDropdown(false) }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 14px',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                backgroundColor: '#FFFFFF',
-                fontSize: '14px',
-                color: '#374151',
-                cursor: 'pointer',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                padding: '8px 14px', border: '1px solid #E5E7EB', borderRadius: '8px',
+                backgroundColor: '#FFFFFF', fontSize: '14px', color: '#374151',
+                cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
               {tahun === 'Semua' ? 'Tahun Terbit' : tahun}
@@ -186,16 +153,12 @@ export default function KatalogPage() {
             {showTahunDropdown && (
               <div style={{
                 position: 'absolute', top: '100%', left: 0, zIndex: 10,
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                marginTop: '4px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                minWidth: '160px',
+                backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB',
+                borderRadius: '8px', marginTop: '4px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: '160px',
               }}>
                 {tahunList.map((t) => (
-                  <button
-                    key={t}
+                  <button key={t}
                     onClick={() => { setTahun(t); setShowTahunDropdown(false) }}
                     style={{
                       display: 'block', width: '100%', textAlign: 'left',
@@ -205,9 +168,7 @@ export default function KatalogPage() {
                       fontSize: '14px', cursor: 'pointer',
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
-                  >
-                    {t}
-                  </button>
+                  >{t}</button>
                 ))}
               </div>
             )}
@@ -216,8 +177,7 @@ export default function KatalogPage() {
           {/* Tersedia Saja */}
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#374151' }}>
             <input
-              type="checkbox"
-              checked={tersediaSaja}
+              type="checkbox" checked={tersediaSaja}
               onChange={(e) => setTersediaSaja(e.target.checked)}
               style={{ width: '16px', height: '16px', accentColor: '#F5A623', cursor: 'pointer' }}
             />
@@ -228,53 +188,41 @@ export default function KatalogPage() {
         {/* Grid buku */}
         {bukuFiltered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: '#6B7280' }}>
-            <p style={{ fontSize: '16px', fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>
-              Buku tidak ditemukan
-            </p>
-            <p style={{ fontSize: '14px', margin: 0 }}>
-              Coba kata kunci atau filter yang berbeda
-            </p>
+            <p style={{ fontSize: '16px', fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Buku tidak ditemukan</p>
+            <p style={{ fontSize: '14px', margin: 0 }}>Coba kata kunci atau filter yang berbeda</p>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '16px',
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
             {bukuFiltered.map((buku, i) => {
               const habis = buku.stok === 0
               const diKeranjang = sudahDiKeranjang(buku.id)
               const keranjangPenuh = keranjang.length >= MAKS_PINJAM
 
               return (
-                <div
+                // ↓ KARTU = Link ke detail buku, TIDAK ada onClick tambah keranjang di sini
+                <Link
                   key={buku.id}
+                  href={`/member/katalog/${buku.id}`}
                   style={{
+                    textDecoration: 'none',
+                    display: 'block',
                     backgroundColor: '#FFFFFF',
                     border: diKeranjang ? '2px solid #F5A623' : '1px solid #E5E7EB',
                     borderRadius: '12px',
                     overflow: 'hidden',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                     opacity: habis ? 0.5 : 1,
-                    cursor: habis ? 'not-allowed' : 'pointer',
+                    pointerEvents: habis ? 'none' : 'auto',
                     transition: 'all 0.15s ease',
                   }}
-                  onClick={() => !habis && tambahKeKeranjang(buku)}
-                  onMouseEnter={(e) => {
-                    if (!habis) e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'
-                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)' }}
                 >
                   {/* Cover buku */}
                   <div style={{
-                    width: '100%',
-                    aspectRatio: '3/4',
-                    backgroundColor: buku.cover ? undefined : coverColors[i % coverColors.length],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: '100%', aspectRatio: '3/4',
+                    backgroundColor: coverColors[i % coverColors.length],
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative',
                   }}>
                     {buku.cover ? (
@@ -287,39 +235,49 @@ export default function KatalogPage() {
                     {habis && (
                       <div style={{
                         position: 'absolute', top: '10px', right: '10px',
-                        backgroundColor: '#DC2626',
-                        color: '#FFFFFF',
+                        backgroundColor: '#DC2626', color: '#FFFFFF',
                         fontSize: '11px', fontWeight: 600,
                         padding: '3px 8px', borderRadius: '999px',
-                      }}>
-                        Habis
-                      </div>
-                    )}
-
-                    {/* Badge sudah di keranjang */}
-                    {diKeranjang && (
-                      <div style={{
-                        position: 'absolute', top: '10px', right: '10px',
-                        backgroundColor: '#F5A623',
-                        color: '#FFFFFF',
-                        fontSize: '11px', fontWeight: 600,
-                        padding: '3px 8px', borderRadius: '999px',
-                      }}>
-                        ✓ Dipilih
-                      </div>
+                      }}>Habis</div>
                     )}
                   </div>
 
-                  {/* Info buku */}
-                  <div style={{ padding: '14px' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#111827', margin: '0 0 4px', lineHeight: 1.3 }}>
-                      {buku.judul}
-                    </p>
-                    <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>
-                      {buku.penulis}
-                    </p>
+                  {/* Info buku + tombol tambah keranjang */}
+                  <div style={{ padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: '14px', fontWeight: 600, color: '#111827', margin: '0 0 4px', lineHeight: 1.3 }}>
+                        {buku.judul}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>
+                        {buku.penulis}
+                      </p>
+                    </div>
+
+                    {/* ↓ BADGE TAMBAH KERANJANG — onClick ada di sini, bukan di kartu */}
+                    {!habis && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()    // ← cegah Link navigasi
+                          e.stopPropagation()   // ← cegah event naik ke Link
+                          tambahKeKeranjang(buku)
+                        }}
+                        style={{
+                          flexShrink: 0, marginLeft: '8px',
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          padding: '4px 10px', borderRadius: '999px', border: 'none',
+                          cursor: keranjangPenuh && !diKeranjang ? 'not-allowed' : 'pointer',
+                          fontSize: '12px', fontWeight: 500,
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
+                          backgroundColor: diKeranjang ? '#DCFCE7' : '#FEF3DC',
+                          color: diKeranjang ? '#15803D' : '#D4891A',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {diKeranjang ? '✓ Dipilih' : '+ Tambah'}
+                      </button>
+                    )}
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -328,38 +286,22 @@ export default function KatalogPage() {
 
       {/* Panel Keranjang */}
       <div style={{
-        width: '280px',
-        flexShrink: 0,
-        borderLeft: '1px solid #E5E7EB',
-        backgroundColor: '#FFFFFF',
-        padding: '24px 20px',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
+        width: '280px', flexShrink: 0,
+        borderLeft: '1px solid #E5E7EB', backgroundColor: '#FFFFFF',
+        padding: '24px 20px', position: 'sticky', top: 0,
+        height: '100vh', overflowY: 'auto',
+        display: 'flex', flexDirection: 'column',
       }}>
-        {/* Header keranjang */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: 0 }}>Keranjang</h2>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#D4891A' }}>
-            {keranjang.length} Buku
-          </span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#D4891A' }}>{keranjang.length} Buku</span>
         </div>
 
-        {/* Info maks */}
         <div style={{
-          backgroundColor: '#EFF6FF',
-          border: '1px solid #BFDBFE',
-          borderRadius: '8px',
-          padding: '10px 12px',
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'flex-start',
-          marginBottom: '16px',
-          fontSize: '13px',
-          color: '#1D4ED8',
+          backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE',
+          borderRadius: '8px', padding: '10px 12px',
+          display: 'flex', gap: '8px', alignItems: 'flex-start',
+          marginBottom: '16px', fontSize: '13px', color: '#1D4ED8',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
             <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
@@ -367,22 +309,19 @@ export default function KatalogPage() {
           Maksimal peminjaman {MAKS_PINJAM} buku sekaligus.
         </div>
 
-        {/* List buku di keranjang */}
         <div style={{ flex: 1 }}>
           {keranjang.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF' }}>
               <p style={{ fontSize: '13px', margin: 0 }}>
-                Belum ada buku dipilih.<br />Klik buku di katalog untuk menambahkan.
+                Belum ada buku dipilih.<br />Klik "+ Tambah" untuk menambahkan.
               </p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {keranjang.map((buku, i) => (
+              {keranjang.map((buku) => (
                 <div key={buku.id} style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '10px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '8px',
+                  padding: '10px', border: '1px solid #E5E7EB', borderRadius: '8px',
                 }}>
                   <div style={{
                     width: '36px', height: '48px', flexShrink: 0,
@@ -415,7 +354,6 @@ export default function KatalogPage() {
           )}
         </div>
 
-        {/* Footer keranjang */}
         <div style={{ marginTop: '24px', borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <span style={{ fontSize: '14px', color: '#6B7280' }}>Pengembalian</span>
@@ -424,19 +362,13 @@ export default function KatalogPage() {
           <button
             disabled={keranjang.length === 0}
             style={{
-              width: '100%',
-              padding: '12px',
+              width: '100%', padding: '12px',
               backgroundColor: keranjang.length === 0 ? '#E5E7EB' : '#F5A623',
               color: keranjang.length === 0 ? '#9CA3AF' : '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
+              border: 'none', borderRadius: '8px',
+              fontSize: '14px', fontWeight: 600,
               cursor: keranjang.length === 0 ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               transition: 'background-color 0.15s ease',
             }}

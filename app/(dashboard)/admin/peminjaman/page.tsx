@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, CheckCircle, XCircle, Clock, User, BookOpen, Calendar, AlertCircle } from 'lucide-react';
+import {
+  Search,
+  CheckCircle,
+  XCircle,
+  Clock,
+  User,
+  BookOpen,
+  Calendar,
+  AlertCircle,
+} from 'lucide-react';
 import { usePeminjamanMenunggu, usePeminjamanAktif } from '@/lib/hooks/usePeminjaman';
 import { konfirmasiPengambilan, batalkanPeminjaman } from '@/lib/data/peminjaman';
 
@@ -22,7 +31,6 @@ export default function PeminjamanPage() {
     if (result.success) {
       setKodeInput('');
     }
-    // Hilangkan pesan setelah 5 detik
     setTimeout(() => setMessage(null), 5000);
   };
 
@@ -40,7 +48,6 @@ export default function PeminjamanPage() {
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
     if (kodeInput.trim()) {
-      // Cari di daftar menunggu
       const found = menungguList.find((p) => p.kode_peminjaman === kodeInput.trim());
       if (found) {
         handleKonfirmasi(kodeInput.trim());
@@ -56,7 +63,6 @@ export default function PeminjamanPage() {
 
   const currentList = activeTab === 'menunggu' ? menungguList : aktifList;
 
-  // Hitung waktu tersisa untuk tampilan
   const getSisaWaktu = (tanggalReservasi: string) => {
     const reservasi = new Date(tanggalReservasi);
     const now = new Date();
@@ -79,7 +85,7 @@ export default function PeminjamanPage() {
         </div>
       </div>
 
-      {/* Scan / Input Kode */}
+      {/* Scan Kode */}
       <div className="bg-[#FFF8EE] border border-[#F3E5C8] rounded-xl p-5 mt-6">
         <h2 className="text-[15px] font-bold text-[#111827] flex items-center gap-2">
           <Search size={18} className="text-[#B45309]" />
@@ -157,12 +163,11 @@ export default function PeminjamanPage() {
             const isExpired = getSisaWaktu(peminjaman.tanggal_reservasi) === 'Habis';
             return (
               <div
-                key={peminjaman.id}
+                key={peminjaman.kode_peminjaman} // ← PASTIKAN PAKAI KODE, BUKAN ID
                 className="bg-white rounded-xl border border-[#E5E7EB] p-5 hover:border-[#F5A623]/40 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    {/* Kode + Status */}
                     <div className="flex items-center gap-3 mb-2">
                       <span className="font-mono text-[14px] font-bold text-[#B45309]">
                         {peminjaman.kode_peminjaman}
@@ -183,7 +188,6 @@ export default function PeminjamanPage() {
                       )}
                     </div>
 
-                    {/* Anggota + Buku */}
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div className="flex items-center gap-2">
                         <User size={15} className="text-[#585F6C]" />
@@ -199,7 +203,6 @@ export default function PeminjamanPage() {
                       </div>
                     </div>
 
-                    {/* Tanggal */}
                     <div className="flex items-center gap-4 mt-2 text-[13px] text-[#585F6C]">
                       <span>Reservasi: {new Date(peminjaman.tanggal_reservasi).toLocaleString('id-ID')}</span>
                       {peminjaman.tanggal_pinjam && (
@@ -213,7 +216,6 @@ export default function PeminjamanPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2 ml-4">
                     {peminjaman.status === 'Menunggu Konfirmasi' && (
                       <>

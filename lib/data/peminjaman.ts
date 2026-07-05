@@ -7,15 +7,22 @@ export interface Peminjaman {
   anggota_nama: string;
   buku_id: string;
   buku_judul: string;
-  tanggal_reservasi: string; // saat anggota ajukan
-  tanggal_pinjam: string | null; // diisi admin saat konfirmasi
+  tanggal_reservasi: string;
+  tanggal_pinjam: string | null;
   jatuh_tempo: string | null;
   status: 'Menunggu Konfirmasi' | 'Aktif' | 'Selesai' | 'Dibatalkan';
   denda: number;
+  hariTerlambat: number;
+  status_denda: 'Belum Lunas' | 'Menunggu Verifikasi' | 'Lunas' | 'Ditolak' | null;
+  pesan_ditolak: string | null;
 }
 
-// Data dummy awal
-const initialPeminjaman: Peminjaman[] = [
+const STORAGE_KEY = 'sipustaka_peminjaman';
+const MAKS_PINJAM_ANGGOTA = 3; // ← batas maks buku per anggota
+const DURASI_PINJAM_HARI = 5;   // ← durasi pinjam 5 hari kerja
+
+// ─── Data Default ─────────────────────────────────────────────
+const defaultPeminjaman: Peminjaman[] = [
   {
     id: '1',
     kode_peminjaman: 'PMJ-20260705-001',
@@ -23,11 +30,14 @@ const initialPeminjaman: Peminjaman[] = [
     anggota_nama: 'Budi Raharjo',
     buku_id: '1',
     buku_judul: 'Bumi Manusia',
-    tanggal_reservasi: '2026-07-05 08:00:00',
+    tanggal_reservasi: new Date().toISOString(),
     tanggal_pinjam: null,
     jatuh_tempo: null,
     status: 'Menunggu Konfirmasi',
     denda: 0,
+    hariTerlambat: 0,
+    status_denda: null,
+    pesan_ditolak: null,
   },
   {
     id: '2',
@@ -36,34 +46,41 @@ const initialPeminjaman: Peminjaman[] = [
     anggota_nama: 'Siti Aminah',
     buku_id: '2',
     buku_judul: 'Laskar Pelangi',
-    tanggal_reservasi: '2026-07-05 09:30:00',
+    tanggal_reservasi: new Date().toISOString(),
     tanggal_pinjam: null,
     jatuh_tempo: null,
     status: 'Menunggu Konfirmasi',
     denda: 0,
-  },
-  {
-    id: '3',
-    kode_peminjaman: 'PMJ-20260704-003',
-    anggota_id: '3',
-    anggota_nama: 'Prof. Dr. Hendra',
-    buku_id: '4',
-    buku_judul: 'Supernova',
-    tanggal_reservasi: '2026-07-04 10:00:00',
-    tanggal_pinjam: '2026-07-04 14:30:00',
-    jatuh_tempo: '2026-07-18',
-    status: 'Aktif',
-    denda: 0,
+    hariTerlambat: 0,
+    status_denda: null,
+    pesan_ditolak: null,
   },
 ];
 
-// In-memory store
-let peminjamanList: Peminjaman[] = [...initialPeminjaman];
-let listeners: (() => void)[] = [];
-
-function notify() {
-  listeners.forEach((l) => l());
+// ─── Load & Save ─────────────────────────────────────────────
+function loadPeminjaman(): Peminjaman[] {
+  if (typeof window === 'undefined') return defaultPeminjaman;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPeminjaman));
+    return defaultPeminjaman;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return defaultPeminjaman;
+  }
 }
+
+function savePeminjaman(data: Peminjaman[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+let peminjamanList: Peminjaman[] = loadPeminjaman();
+
+// ─── Subscribe ─────────────────────────────────────────────
+let listeners: (() => void)[] = [];
 
 export function subscribePeminjaman(listener: () => void) {
   listeners.push(listener);
@@ -72,34 +89,45 @@ export function subscribePeminjaman(listener: () => void) {
   };
 }
 
-// ─── CRUD ───
+function notify() {
+  listeners.forEach((l) => l());
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('custom-storage-update'));
+  }
+}
 
-// Ambil semua peminjaman
+// ─── CRUD ──────────────────────────────────────────────────
+
 export function getPeminjaman(): Peminjaman[] {
+  peminjamanList = loadPeminjaman();
   return peminjamanList;
 }
 
-// Ambil berdasarkan id
 export function getPeminjamanById(id: string): Peminjaman | undefined {
-  return peminjamanList.find((p) => p.id === id);
+  return getPeminjaman().find((p) => p.id === id);
 }
 
-// Ambil berdasarkan kode
 export function getPeminjamanByKode(kode: string): Peminjaman | undefined {
-  return peminjamanList.find((p) => p.kode_peminjaman === kode);
+  return getPeminjaman().find((p) => p.kode_peminjaman === kode);
 }
 
-// Ambil yang statusnya Menunggu Konfirmasi
 export function getPeminjamanMenunggu(): Peminjaman[] {
-  return peminjamanList.filter((p) => p.status === 'Menunggu Konfirmasi');
+  return getPeminjaman().filter((p) => p.status === 'Menunggu Konfirmasi');
 }
 
-// Ambil yang statusnya Aktif
 export function getPeminjamanAktif(): Peminjaman[] {
-  return peminjamanList.filter((p) => p.status === 'Aktif');
+  return getPeminjaman().filter((p) => p.status === 'Aktif');
 }
 
-// Generate kode peminjaman
+// Ambil peminjaman aktif atau menunggu untuk anggota tertentu
+export function getPeminjamanByAnggota(anggotaId: string): Peminjaman[] {
+  return getPeminjaman().filter(
+    (p) => p.anggota_id === anggotaId && (p.status === 'Aktif' || p.status === 'Menunggu Konfirmasi')
+  );
+}
+
+// ─── Generate Kode ──────────────────────────────────────────
 function generateKodePeminjaman(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -107,8 +135,7 @@ function generateKodePeminjaman(): string {
   const day = String(now.getDate()).padStart(2, '0');
   const dateStr = `${year}${month}${day}`;
 
-  // Hitung jumlah peminjaman hari ini
-  const todayCount = peminjamanList.filter((p) =>
+  const todayCount = getPeminjaman().filter((p) =>
     p.kode_peminjaman.startsWith(`PMJ-${dateStr}`)
   ).length;
 
@@ -116,13 +143,22 @@ function generateKodePeminjaman(): string {
   return `PMJ-${dateStr}-${sequence}`;
 }
 
-// Tambah peminjaman baru (dipanggil dari sisi member)
+// ─── Tambah Peminjaman ──────────────────────────────────────
 export function addPeminjaman(data: {
   anggota_id: string;
   anggota_nama: string;
   buku_id: string;
   buku_judul: string;
-}): Peminjaman {
+}): { success: boolean; message: string; data?: Peminjaman } {
+  // Validasi maks buku per anggota
+  const pinjamanAktif = getPeminjamanByAnggota(data.anggota_id);
+  if (pinjamanAktif.length >= MAKS_PINJAM_ANGGOTA) {
+    return {
+      success: false,
+      message: `Anggota sudah mencapai batas maksimal ${MAKS_PINJAM_ANGGOTA} buku.`,
+    };
+  }
+
   const newPeminjaman: Peminjaman = {
     id: String(Date.now()),
     kode_peminjaman: generateKodePeminjaman(),
@@ -135,18 +171,18 @@ export function addPeminjaman(data: {
     jatuh_tempo: null,
     status: 'Menunggu Konfirmasi',
     denda: 0,
+    hariTerlambat: 0,
+    status_denda: null,
+    pesan_ditolak: null,
   };
 
   peminjamanList = [...peminjamanList, newPeminjaman];
+  savePeminjaman(peminjamanList);
   notify();
-
-  // ⚠️ Stok buku harus dikurangi di sini (panggil updateBuku)
-  // Nanti kita integrasikan dengan lib/data/buku.ts
-
-  return newPeminjaman;
+  return { success: true, message: 'Peminjaman berhasil diajukan', data: newPeminjaman };
 }
 
-// Konfirmasi pengambilan (admin)
+// ─── Konfirmasi Pengambilan (admin) ─────────────────────────
 export function konfirmasiPengambilan(kode: string): {
   success: boolean;
   message: string;
@@ -159,7 +195,7 @@ export function konfirmasiPengambilan(kode: string): {
   }
 
   if (peminjaman.status !== 'Menunggu Konfirmasi') {
-    return { success: false, message: `Status peminjaman saat ini: ${peminjaman.status}` };
+    return { success: false, message: `Status saat ini: ${peminjaman.status}` };
   }
 
   // Cek apakah sudah lewat 24 jam
@@ -168,7 +204,6 @@ export function konfirmasiPengambilan(kode: string): {
   const diffHours = (now.getTime() - reservasiDate.getTime()) / (1000 * 60 * 60);
 
   if (diffHours > 24) {
-    // Otomatis batalkan
     batalkanPeminjaman(kode);
     return {
       success: false,
@@ -176,10 +211,9 @@ export function konfirmasiPengambilan(kode: string): {
     };
   }
 
-  // Konfirmasi
-  const tanggalPinjam = new Date().toISOString().split('T')[0];
+  const tanggalPinjam = now.toISOString().split('T')[0];
   const jatuhTempo = new Date();
-  jatuhTempo.setDate(jatuhTempo.getDate() + 14);
+  jatuhTempo.setDate(jatuhTempo.getDate() + DURASI_PINJAM_HARI); // ← 5 hari kerja
 
   const updated = {
     ...peminjaman,
@@ -191,12 +225,12 @@ export function konfirmasiPengambilan(kode: string): {
   peminjamanList = peminjamanList.map((p) =>
     p.id === peminjaman.id ? updated : p
   );
-
+  savePeminjaman(peminjamanList);
   notify();
   return { success: true, message: 'Peminjaman berhasil dikonfirmasi', data: updated };
 }
 
-// Batalkan peminjaman (otomatis jika lewat 24 jam, atau manual oleh admin)
+// ─── Batalkan Peminjaman ────────────────────────────────────
 export function batalkanPeminjaman(kode: string): {
   success: boolean;
   message: string;
@@ -214,15 +248,16 @@ export function batalkanPeminjaman(kode: string): {
   peminjamanList = peminjamanList.map((p) =>
     p.id === peminjaman.id ? { ...p, status: 'Dibatalkan' as const } : p
   );
-
+  savePeminjaman(peminjamanList);
   notify();
   return { success: true, message: 'Peminjaman berhasil dibatalkan' };
 }
 
-// Selesaikan peminjaman (saat buku dikembalikan)
+// ─── Selesaikan Peminjaman (pengembalian admin) ─────────────
 export function selesaikanPeminjaman(id: string): {
   success: boolean;
   message: string;
+  denda?: number;
 } {
   const peminjaman = getPeminjamanById(id);
 
@@ -234,23 +269,88 @@ export function selesaikanPeminjaman(id: string): {
     return { success: false, message: 'Hanya peminjaman aktif yang bisa diselesaikan' };
   }
 
-  // Hitung denda jika terlambat
   let denda = 0;
+  let hariTerlambat = 0;
   if (peminjaman.jatuh_tempo) {
     const jatuhTempo = new Date(peminjaman.jatuh_tempo);
     const now = new Date();
     if (now > jatuhTempo) {
-      const diffDays = Math.ceil(
+      hariTerlambat = Math.ceil(
         (now.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24)
       );
-      denda = diffDays * 2000; // Rp 2.000/hari
+      denda = hariTerlambat * 2000; // Rp 2.000/hari
     }
   }
 
-  peminjamanList = peminjamanList.map((p) =>
-    p.id === id ? { ...p, status: 'Selesai' as const, denda } : p
-  );
+  const updated = {
+    ...peminjaman,
+    status: 'Selesai' as const,
+    denda,
+    hariTerlambat,
+    status_denda: denda > 0 ? ('Belum Lunas' as const) : null,
+    pesan_ditolak: null,
+  };
 
+  peminjamanList = peminjamanList.map((p) =>
+    p.id === id ? updated : p
+  );
+  savePeminjaman(peminjamanList);
   notify();
-  return { success: true, message: 'Pengembalian berhasil' };
+  return { success: true, message: 'Pengembalian berhasil', denda };
+}
+
+// ─── Update Peminjaman ──────────────────────────────────────
+export function updatePeminjaman(
+  id: string,
+  data: Partial<Peminjaman>
+): Peminjaman | null {
+  let updated: Peminjaman | null = null;
+  peminjamanList = peminjamanList.map((p) => {
+    if (p.id === id) {
+      updated = { ...p, ...data };
+      return updated;
+    }
+    return p;
+  });
+  if (updated) {
+    savePeminjaman(peminjamanList);
+    notify();
+  }
+  return updated;
+}
+
+// ─── Verifikasi Denda (admin) ──────────────────────────────
+export function verifikasiDenda(
+  id: string,
+  status: 'Lunas' | 'Ditolak',
+  pesan?: string
+): {
+  success: boolean;
+  message: string;
+} {
+  const peminjaman = getPeminjamanById(id);
+  if (!peminjaman) {
+    return { success: false, message: 'Peminjaman tidak ditemukan' };
+  }
+
+  if (peminjaman.status !== 'Selesai') {
+    return { success: false, message: 'Hanya peminjaman selesai yang memiliki denda' };
+  }
+
+  if (status === 'Ditolak' && !pesan) {
+    return { success: false, message: 'Alasan penolakan harus diisi' };
+  }
+
+  const updated = {
+    ...peminjaman,
+    status_denda: status,
+    pesan_ditolak: status === 'Ditolak' ? pesan || null : null,
+  };
+
+  peminjamanList = peminjamanList.map((p) =>
+    p.id === id ? updated : p
+  );
+  savePeminjaman(peminjamanList);
+  notify();
+  return { success: true, message: `Denda berhasil diverifikasi sebagai ${status}` };
 }

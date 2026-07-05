@@ -1,62 +1,107 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState } from 'react';
+import Link from 'next/link';
+import { useBuku } from '@/lib/hooks/useBuku';
+import { addPeminjaman } from '@/lib/data/peminjaman';
 
-const MAKS_PINJAM = 3
-const DURASI_HARI = 5
+const MAKS_PINJAM = 3;
+const DURASI_HARI = 5;
 
-const dummyBuku = [
-  { id: '1', judul: 'Bumi Manusia', penulis: 'Pramoedya Ananta Toer', kategori: 'Sastra', tahun: 2005, stok: 2, cover: null },
-  { id: '2', judul: 'Laskar Pelangi', penulis: 'Andrea Hirata', kategori: 'Sastra', tahun: 2005, stok: 1, cover: null },
-  { id: '3', judul: 'Hujan Bulan Juni', penulis: 'Sapardi Djoko Damono', kategori: 'Puisi', tahun: 1994, stok: 0, cover: null },
-  { id: '4', judul: 'Supernova', penulis: 'Dee Lestari', kategori: 'Fiksi', tahun: 2001, stok: 3, cover: null },
-  { id: '5', judul: 'Cantik Itu Luka', penulis: 'Eka Kurniawan', kategori: 'Sastra', tahun: 2002, stok: 2, cover: null },
-  { id: '6', judul: 'Tetralogi Buru', penulis: 'Pramoedya Ananta Toer', kategori: 'Sastra', tahun: 1980, stok: 1, cover: null },
-]
+const kategoriList = ['Semua', 'Sastra Indonesia', 'Fiksi Ilmiah', 'Puisi', 'Bisnis', 'Sejarah', 'Self Improvement', 'Sains & Tek'];
+const tahunList = ['Semua', '1980–1999', '2000–2009', '2010–sekarang'];
 
-const kategoriList = ['Semua', 'Sastra', 'Fiksi', 'Puisi']
-const tahunList = ['Semua', '1980–1999', '2000–2009', '2010–sekarang']
+type Buku = {
+  id: string;
+  judul: string;
+  penulis: string;
+  kategori: string;
+  tahun: number;
+  stok: number;
+  cover: string | null;
+  preview: string | null;
+  sinopsis: string;
+  penerbit: string;
+  cetakan: string;
+  isbn: string;
+};
 
-type Buku = typeof dummyBuku[0]
-
-const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B']
+const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B'];
 
 export default function KatalogPage() {
-  const [search, setSearch] = useState('')
-  const [kategori, setKategori] = useState('Semua')
-  const [tahun, setTahun] = useState('Semua')
-  const [tersediaSaja, setTersediaSaja] = useState(false)
-  const [keranjang, setKeranjang] = useState<Buku[]>([])
-  const [showKategoriDropdown, setShowKategoriDropdown] = useState(false)
-  const [showTahunDropdown, setShowTahunDropdown] = useState(false)
+  const books = useBuku();
+
+  const [search, setSearch] = useState('');
+  const [kategori, setKategori] = useState('Semua');
+  const [tahun, setTahun] = useState('Semua');
+  const [tersediaSaja, setTersediaSaja] = useState(false);
+  const [keranjang, setKeranjang] = useState<Buku[]>([]);
+  const [showKategoriDropdown, setShowKategoriDropdown] = useState(false);
+  const [showTahunDropdown, setShowTahunDropdown] = useState(false);
 
   const tambahKeKeranjang = (buku: Buku) => {
-    if (keranjang.length >= MAKS_PINJAM) return
-    if (keranjang.find((b) => b.id === buku.id)) return
-    if (buku.stok === 0) return
-    setKeranjang([...keranjang, buku])
-  }
+    if (keranjang.length >= MAKS_PINJAM) return;
+    if (keranjang.find((b) => b.id === buku.id)) return;
+    if (buku.stok === 0) return;
+    setKeranjang([...keranjang, buku]);
+  };
 
   const hapusDariKeranjang = (id: string) => {
-    setKeranjang(keranjang.filter((b) => b.id !== id))
-  }
+    setKeranjang(keranjang.filter((b) => b.id !== id));
+  };
 
-  const sudahDiKeranjang = (id: string) => keranjang.some((b) => b.id === id)
+  const sudahDiKeranjang = (id: string) => keranjang.some((b) => b.id === id);
 
-  const bukuFiltered = dummyBuku.filter((b) => {
+  const bukuFiltered = books.filter((b) => {
     const matchSearch =
       b.judul.toLowerCase().includes(search.toLowerCase()) ||
-      b.penulis.toLowerCase().includes(search.toLowerCase())
-    const matchKategori = kategori === 'Semua' || b.kategori === kategori
-    const matchTersedia = !tersediaSaja || b.stok > 0
+      b.penulis.toLowerCase().includes(search.toLowerCase());
+    const matchKategori = kategori === 'Semua' || b.kategori === kategori;
+    const matchTersedia = !tersediaSaja || b.stok > 0;
     const matchTahun =
       tahun === 'Semua' ||
       (tahun === '1980–1999' && b.tahun >= 1980 && b.tahun <= 1999) ||
       (tahun === '2000–2009' && b.tahun >= 2000 && b.tahun <= 2009) ||
-      (tahun === '2010–sekarang' && b.tahun >= 2010)
-    return matchSearch && matchKategori && matchTersedia && matchTahun
-  })
+      (tahun === '2010–sekarang' && b.tahun >= 2010);
+    return matchSearch && matchKategori && matchTersedia && matchTahun;
+  });
+
+  // ─── AJUKAN PEMINJAMAN ──────────────────────────────────────
+  const handleAjukanPeminjaman = () => {
+    if (keranjang.length === 0) return;
+
+    // TODO: nanti ganti dengan data dari session/login
+    const anggotaId = '1';
+    const anggotaNama = 'Budi Raharjo';
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    keranjang.forEach((buku) => {
+      try {
+        addPeminjaman({
+          anggota_id: anggotaId,
+          anggota_nama: anggotaNama,
+          buku_id: buku.id,
+          buku_judul: buku.judul,
+        });
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        console.error('Gagal ajukan peminjaman:', error);
+      }
+    });
+
+    if (successCount > 0) {
+      setKeranjang([]);
+      alert(`✅ ${successCount} buku berhasil diajukan peminjaman!`);
+      if (errorCount > 0) {
+        alert(`⚠️ ${errorCount} buku gagal diajukan.`);
+      }
+    } else {
+      alert('❌ Gagal mengajukan peminjaman.');
+    }
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -194,12 +239,11 @@ export default function KatalogPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
             {bukuFiltered.map((buku, i) => {
-              const habis = buku.stok === 0
-              const diKeranjang = sudahDiKeranjang(buku.id)
-              const keranjangPenuh = keranjang.length >= MAKS_PINJAM
+              const habis = buku.stok === 0;
+              const diKeranjang = sudahDiKeranjang(buku.id);
+              const keranjangPenuh = keranjang.length >= MAKS_PINJAM;
 
               return (
-                // ↓ KARTU = Link ke detail buku, TIDAK ada onClick tambah keranjang di sini
                 <Link
                   key={buku.id}
                   href={`/member/katalog/${buku.id}`}
@@ -221,7 +265,7 @@ export default function KatalogPage() {
                   {/* Cover buku */}
                   <div style={{
                     width: '100%', aspectRatio: '3/4',
-                    backgroundColor: coverColors[i % coverColors.length],
+                    backgroundColor: buku.cover ? undefined : coverColors[i % coverColors.length],
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative',
                   }}>
@@ -231,7 +275,6 @@ export default function KatalogPage() {
                       <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Cover</span>
                     )}
 
-                    {/* Badge stok habis */}
                     {habis && (
                       <div style={{
                         position: 'absolute', top: '10px', right: '10px',
@@ -242,7 +285,6 @@ export default function KatalogPage() {
                     )}
                   </div>
 
-                  {/* Info buku + tombol tambah keranjang */}
                   <div style={{ padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <p style={{ fontSize: '14px', fontWeight: 600, color: '#111827', margin: '0 0 4px', lineHeight: 1.3 }}>
@@ -253,13 +295,12 @@ export default function KatalogPage() {
                       </p>
                     </div>
 
-                    {/* ↓ BADGE TAMBAH KERANJANG — onClick ada di sini, bukan di kartu */}
                     {!habis && (
                       <button
                         onClick={(e) => {
-                          e.preventDefault()    // ← cegah Link navigasi
-                          e.stopPropagation()   // ← cegah event naik ke Link
-                          tambahKeKeranjang(buku)
+                          e.preventDefault();
+                          e.stopPropagation();
+                          tambahKeKeranjang(buku);
                         }}
                         style={{
                           flexShrink: 0, marginLeft: '8px',
@@ -278,13 +319,13 @@ export default function KatalogPage() {
                     )}
                   </div>
                 </Link>
-              )
+              );
             })}
           </div>
         )}
       </div>
 
-      {/* Panel Keranjang */}
+      {/* ─── Panel Keranjang ─── */}
       <div style={{
         width: '280px', flexShrink: 0,
         borderLeft: '1px solid #E5E7EB', backgroundColor: '#FFFFFF',
@@ -325,7 +366,7 @@ export default function KatalogPage() {
                 }}>
                   <div style={{
                     width: '36px', height: '48px', flexShrink: 0,
-                    backgroundColor: coverColors[dummyBuku.findIndex(b => b.id === buku.id) % coverColors.length],
+                    backgroundColor: coverColors[parseInt(buku.id) % coverColors.length],
                     borderRadius: '4px',
                   }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -360,6 +401,7 @@ export default function KatalogPage() {
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>+{DURASI_HARI} Hari</span>
           </div>
           <button
+            onClick={handleAjukanPeminjaman}
             disabled={keranjang.length === 0}
             style={{
               width: '100%', padding: '12px',
@@ -381,5 +423,5 @@ export default function KatalogPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

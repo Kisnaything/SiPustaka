@@ -3,57 +3,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-
-const dummyBuku = [
-  {
-    id: '1',
-    judul: 'Bumi Manusia',
-    penulis: 'Pramoedya Ananta Toer',
-    kategori: 'Sastra Indonesia',
-    penerbit: 'Lentera Dipantara',
-    tahun: 2005,
-    cetakan: 'Ke-12',
-    isbn: '978-979-97312-3-4',
-    stok: 2,
-    cover: null,
-    sinopsis: 'Novel ini mengisahkan Minke, seorang pemuda pribumi yang hidup di era kolonial Belanda. Melalui kisah cintanya dengan Annelies, Pramoedya mengeksplorasi tema identitas, keadilan, dan perlawanan terhadap penindasan kolonial. Bumi Manusia adalah karya monumental yang menggambarkan pergolakan sosial dan budaya Indonesia di awal abad ke-20.\n\nDitulis dengan gaya bahasa yang kuat dan penuh wibawa, novel ini tidak hanya sebuah kisah roman, tetapi juga sebuah dokumen sejarah yang hidup tentang bagaimana bangsa Indonesia terbentuk di tengah tekanan penjajahan.',
-  },
-  {
-    id: '2',
-    judul: 'Laskar Pelangi',
-    penulis: 'Andrea Hirata',
-    kategori: 'Sastra Indonesia',
-    penerbit: 'Bentang Pustaka',
-    tahun: 2005,
-    cetakan: 'Ke-20',
-    isbn: '978-979-1227-78-2',
-    stok: 1,
-    cover: null,
-    sinopsis: 'Laskar Pelangi adalah kisah tentang sepuluh anak dari keluarga miskin di Belitung yang berjuang mendapatkan pendidikan. Dengan semangat yang tak pernah padam, mereka membuktikan bahwa mimpi tidak mengenal keterbatasan.\n\nNovel ini menyentuh hati jutaan pembaca dengan ketulusan dan humor yang hangat, sekaligus menjadi kritik sosial yang halus terhadap kesenjangan pendidikan di Indonesia.',
-  },
-  {
-    id: '3', judul: 'Hujan Bulan Juni', penulis: 'Sapardi Djoko Damono', kategori: 'Puisi', penerbit: 'Gramedia', tahun: 1994, cetakan: 'Ke-5', isbn: '978-602-03-1234-5', stok: 0, cover: null, sinopsis: 'Kumpulan puisi terbaik Sapardi.',
-  },
-  {
-    id: '4', judul: 'Supernova', penulis: 'Dee Lestari', kategori: 'Fiksi Ilmiah', penerbit: 'Bentang Pustaka', tahun: 2001, cetakan: 'Ke-8', isbn: '978-602-291-123-4', stok: 3, cover: null, sinopsis: 'Supernova adalah novel fiksi ilmiah yang memadukan sains, spiritualitas, dan romansa.',
-  },
-  {
-    id: '5', judul: 'Cantik Itu Luka', penulis: 'Eka Kurniawan', kategori: 'Sastra Indonesia', penerbit: 'Gramedia', tahun: 2002, cetakan: 'Ke-6', isbn: '978-602-03-2345-6', stok: 2, cover: null, sinopsis: 'Novel magis-realis yang mengisahkan perempuan, kekerasan, dan sejarah Indonesia.',
-  },
-  {
-    id: '6', judul: 'Tetralogi Buru', penulis: 'Pramoedya Ananta Toer', kategori: 'Sastra Indonesia', penerbit: 'Lentera Dipantara', tahun: 1980, cetakan: 'Ke-3', isbn: '978-979-97312-4-1', stok: 1, cover: null, sinopsis: 'Empat novel epik tentang kebangkitan nasionalisme Indonesia.',
-  },
-]
+import { useBukuById } from '@/lib/hooks/useBuku'
 
 const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B']
 
 export default function DetailBukuPage() {
   const params = useParams()
   const id = params.id as string
-  const buku = dummyBuku.find((b) => b.id === id)
-  const colorIndex = dummyBuku.findIndex((b) => b.id === id)
+  const buku = useBukuById(id)
 
   const [ditambahkan, setDitambahkan] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   if (!buku) {
     return (
@@ -65,9 +25,86 @@ export default function DetailBukuPage() {
   }
 
   const habis = buku.stok === 0
+  const colorIndex = parseInt(buku.id) % coverColors.length
 
   return (
     <div style={{ padding: '24px 32px', fontFamily: "'Plus Jakarta Sans', sans-serif", maxWidth: '1280px' }}>
+
+      {/* ─── Modal Preview PDF ─── */}
+      {showPreview && buku.preview && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
+          onClick={() => setShowPreview(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '900px',
+              height: '80vh',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 20px',
+                borderBottom: '1px solid #E5E7EB',
+                backgroundColor: '#F9FAFB',
+              }}
+            >
+              <span style={{ fontWeight: 600, fontSize: '14px' }}>
+                Preview: {buku.judul}
+              </span>
+              <button
+                onClick={() => setShowPreview(false)}
+                style={{
+                  padding: '4px 8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ height: 'calc(100% - 56px)', padding: '16px' }}>
+              <object
+                data={buku.preview}
+                type="application/pdf"
+                style={{ width: '100%', height: '100%', borderRadius: '8px' }}
+              >
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                  <p>Browser tidak mendukung preview PDF.</p>
+                  <a
+                    href={buku.preview}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#F5A623', textDecoration: 'underline' }}
+                  >
+                    Download PDF
+                  </a>
+                </div>
+              </object>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '32px', fontSize: '14px' }}>
@@ -107,6 +144,38 @@ export default function DetailBukuPage() {
               <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Cover</span>
             )}
           </div>
+
+          {/* Tombol Preview */}
+          {buku.preview && (
+            <button
+              onClick={() => setShowPreview(true)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#FEF3DC',
+                color: '#B45309',
+                border: '1px solid #F5A623',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginBottom: '10px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FDE68A' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#FEF3DC' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              Preview Buku
+            </button>
+          )}
 
           {/* Tombol Tambah ke Keranjang */}
           <button
@@ -217,7 +286,7 @@ export default function DetailBukuPage() {
             {[
               { label: 'PENERBIT', value: buku.penerbit },
               { label: 'TAHUN TERBIT', value: buku.tahun },
-              { label: 'CETAKAN', value: buku.cetakan },
+              { label: 'CETAKAN', value: buku.cetakan || 'Ke-1' },
               { label: 'ISBN', value: buku.isbn },
             ].map((item) => (
               <div key={item.label} style={{ backgroundColor: '#FFFFFF', padding: '16px 18px' }}>

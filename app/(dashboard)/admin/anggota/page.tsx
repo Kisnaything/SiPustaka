@@ -15,13 +15,15 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
+import { useAnggota } from '@/lib/hooks/useAnggota';
+import { deleteAnggota } from '@/lib/data/anggota';
 
 type Status = 'AKTIF' | 'NON-AKTIF';
 
 const stats = [
   {
     label: 'Total Anggota',
-    value: '2,450',
+    value: '0', // diisi dinamis
     valueColor: 'text-[#111827]',
     icon: Users,
     iconBg: 'bg-[#FDECC8]',
@@ -29,7 +31,7 @@ const stats = [
   },
   {
     label: 'Aktif Meminjam',
-    value: '842',
+    value: '0',
     valueColor: 'text-[#16A34A]',
     icon: BookMarked,
     iconBg: 'bg-[#D1FAE5]',
@@ -37,7 +39,7 @@ const stats = [
   },
   {
     label: 'Terlambat Kembali',
-    value: '12',
+    value: '0',
     valueColor: 'text-[#DC2626]',
     icon: AlertCircle,
     iconBg: 'bg-[#FEE2E2]',
@@ -46,7 +48,7 @@ const stats = [
   },
   {
     label: 'Registrasi Baru (Bulan Ini)',
-    value: '156',
+    value: '0',
     valueColor: 'text-[#2563EB]',
     icon: UserCheck,
     iconBg: 'bg-[#DBEAFE]',
@@ -54,47 +56,32 @@ const stats = [
   },
 ];
 
-const members = [
-  {
-    id: 1,
-    name: 'Budi Raharjo',
-    faculty: 'Teknik Informatika',
-    memberId: 'LIB-2023-001',
-    email: 'budi.ra@univ.ac.id',
-    phone: '+62 812-3456-7890',
-    tglRegistrasi: '12 Jan 2023',
-    pinjaman: '3 Buku',
-    status: 'AKTIF' as Status,
-    avatar: 'bg-[#93C5FD]',
-  },
-  {
-    id: 2,
-    name: 'Siti Aminah',
-    faculty: 'Sains Lingkungan',
-    memberId: 'LIB-2023-045',
-    email: 'siti.am@univ.ac.id',
-    phone: '+62 856-7890-1234',
-    tglRegistrasi: '24 Feb 2023',
-    pinjaman: '0 Buku',
-    status: 'AKTIF' as Status,
-    avatar: 'bg-[#F9A8D4]',
-  },
-  {
-    id: 3,
-    name: 'Prof. Dr. Hendra',
-    faculty: 'Fakultas Ekonomi',
-    memberId: 'LIB-2022-112',
-    email: 'hendra.eco@univ.ac.id',
-    phone: '+62 811-2233-4455',
-    tglRegistrasi: '15 Nov 2022',
-    pinjaman: '5 Buku',
-    status: 'NON-AKTIF' as Status,
-    avatar: 'bg-[#78350F]',
-  },
-];
+const avatarColors = ['#93C5FD', '#F9A8D4', '#78350F', '#6EE7B7', '#FCD34D', '#FCA5A5'];
 
 export default function AnggotaPage() {
+  const anggotaList = useAnggota();
   const page = 1;
+
+  // Hitung stat dinamis
+  const totalAnggota = anggotaList.length;
+  const aktif = anggotaList.filter((a) => a.status === 'AKTIF').length;
+  const nonAktif = totalAnggota - aktif;
+  const pinjamanAktif = anggotaList.reduce((sum, a) => sum + (a.pinjaman || 0), 0);
+
+  // Update stats
+  stats[0].value = totalAnggota.toString();
+  stats[1].value = pinjamanAktif.toString();
+  stats[2].value = '0'; // belum ada logika denda
+  stats[3].value = '0'; // belum ada filter bulan ini
+
+  const handleDelete = (id: string) => {
+    if (confirm('Yakin ingin menghapus anggota ini?')) {
+      const result = deleteAnggota(id);
+      if (!result.success) {
+        alert(result.message);
+      }
+    }
+  };
 
   return (
     <div>
@@ -185,87 +172,82 @@ export default function AnggotaPage() {
             </tr>
           </thead>
           <tbody>
-            {members.map((member, i) => (
-              <tr
-                key={member.id}
-                className={i !== members.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
-              >
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full shrink-0 ${member.avatar}`} />
-                    <div>
-                      <p className="text-[14px] font-semibold text-[#B45309]">
-                        {member.name}
-                      </p>
-                      <p className="text-[13px] text-[#585F6C]">{member.faculty}</p>
+            {anggotaList.map((member, i) => {
+              const avatarBg = avatarColors[i % avatarColors.length];
+              return (
+                <tr
+                  key={member.id}
+                  className={i !== anggotaList.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full shrink-0`} style={{ backgroundColor: avatarBg }} />
+                      <div>
+                        <p className="text-[14px] font-semibold text-[#B45309]">
+                          {member.nama}
+                        </p>
+                        <p className="text-[13px] text-[#585F6C]">{member.instansi}</p>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[14px] text-[#374151]">{member.memberId}</td>
-                <td className="px-6 py-4">
-                  <p className="text-[13.5px] text-[#374151]">{member.email}</p>
-                  <p className="text-[13px] text-[#9CA3AF]">{member.phone}</p>
-                </td>
-                <td className="px-6 py-4 text-[14px] text-[#585F6C]">
-                  {member.tglRegistrasi}
-                </td>
-                <td className="px-6 py-4">
-                  <span className="text-[12px] font-semibold text-[#B45309] bg-[#FDECC8] px-2.5 py-1 rounded-md">
-                    {member.pinjaman}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${
-                      member.status === 'AKTIF'
-                        ? 'bg-[#D1FAE5] text-[#16A34A]'
-                        : 'bg-[#F3F4F6] text-[#585F6C]'
-                    }`}
-                  >
-                    {member.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-end gap-2">
-                    <Link
-                      href={`/admin/anggota/edit/${member.id}`}
-                      className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
+                  </td>
+                  <td className="px-6 py-4 text-[14px] text-[#374151]">
+                    {member.id}
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-[13.5px] text-[#374151]">{member.email}</p>
+                    <p className="text-[13px] text-[#9CA3AF]">{member.telepon}</p>
+                  </td>
+                  <td className="px-6 py-4 text-[14px] text-[#585F6C]">
+                    {member.tanggal_daftar}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-[12px] font-semibold text-[#B45309] bg-[#FDECC8] px-2.5 py-1 rounded-md">
+                      {member.pinjaman ?? 0} Buku
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${
+                        member.status === 'AKTIF'
+                          ? 'bg-[#D1FAE5] text-[#16A34A]'
+                          : 'bg-[#F3F4F6] text-[#585F6C]'
+                      }`}
                     >
-                      <Pencil size={15} />
-                    </Link>
-                    <button className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      {member.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/admin/anggota/edit/${member.id}`}
+                        className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
+                      >
+                        <Pencil size={15} />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(member.id)}
+                        className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
         <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB]">
           <p className="text-[13px] text-[#585F6C]">
-            Menampilkan 1-3 dari 2,450 anggota
+            Menampilkan {anggotaList.length} dari {anggotaList.length} anggota
           </p>
           <div className="flex items-center gap-1.5">
             <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#9CA3AF] hover:bg-[#F9FAFB]">
               <ChevronLeft size={16} />
             </button>
-            {[1, 2, 3].map((p) => (
-              <button
-                key={p}
-                className={`w-8 h-8 rounded-md text-[13px] font-semibold ${
-                  p === page
-                    ? 'bg-[#B45309] text-white'
-                    : 'text-[#585F6C] hover:bg-[#F9FAFB]'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <span className="text-[#9CA3AF] px-1">...</span>
-            <button className="w-8 h-8 rounded-md text-[13px] font-semibold text-[#585F6C] hover:bg-[#F9FAFB]">
-              817
+            <button className="w-8 h-8 rounded-md text-[13px] font-semibold bg-[#B45309] text-white">
+              1
             </button>
             <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
               <ChevronRight size={16} />

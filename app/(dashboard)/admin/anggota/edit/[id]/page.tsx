@@ -1,25 +1,64 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { User, Image as ImageIcon, Lock, Camera, ChevronDown, Save } from 'lucide-react';
-
-// TODO: ganti dengan fetch data anggota asli berdasarkan params.id
-const dummyMember = {
-  name: 'Budi Raharjo',
-  memberId: 'LIB-2023-001',
-  email: 'budi.ra@univ.ac.id',
-  phone: '+62 812-3456-7890',
-  faculty: 'Teknik Informatika',
-  address: 'Jl. Mulyosari No. 12, Surabaya',
-  username: 'budi.ra',
-  aktif: true,
-};
+import { useAnggotaById } from '@/lib/hooks/useAnggota';
+import { updateAnggota } from '@/lib/data/anggota';
 
 export default function EditAnggotaPage() {
   const params = useParams();
-  const [aktif, setAktif] = useState(dummyMember.aktif);
+  const router = useRouter();
+  const id = params.id as string;
+  const anggota = useAnggotaById(id);
+
+  const [nama, setNama] = useState('');
+  const [email, setEmail] = useState('');
+  const [telepon, setTelepon] = useState('');
+  const [instansi, setInstansi] = useState('');
+  const [alamat, setAlamat] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [aktif, setAktif] = useState(true);
+
+  useEffect(() => {
+    if (anggota) {
+      setNama(anggota.nama);
+      setEmail(anggota.email);
+      setTelepon(anggota.telepon);
+      setInstansi(anggota.instansi);
+      setAlamat(anggota.alamat);
+      setUsername(anggota.username);
+      setPassword(anggota.password);
+      setAktif(anggota.status === 'AKTIF');
+    }
+  }, [anggota]);
+
+  if (!anggota) {
+    return <div className="p-6">Anggota tidak ditemukan</div>;
+  }
+
+  const handleSubmit = () => {
+    if (!nama || !email || !username || !password) {
+      alert('Harap lengkapi field wajib: Nama, Email, Username, Password');
+      return;
+    }
+
+    const updatedData = {
+      nama,
+      email,
+      telepon,
+      instansi,
+      alamat,
+      username,
+      password,
+      status: aktif ? 'AKTIF' as const : 'NON-AKTIF' as const,
+    };
+
+    updateAnggota(id, updatedData);
+    router.push('/admin/anggota');
+  };
 
   return (
     <div>
@@ -37,8 +76,7 @@ export default function EditAnggotaPage() {
         <h1 className="text-[24px] font-bold text-[#111827]">Edit Data Anggota</h1>
         <p className="text-[14px] text-[#585F6C] mt-1">
           Perbarui informasi keanggotaan{' '}
-          <span className="font-semibold text-[#374151]">{dummyMember.name}</span> (ID:{' '}
-          {params?.id}).
+          <span className="font-semibold text-[#374151]">{anggota.nama}</span> (ID: {id}).
         </p>
       </div>
 
@@ -54,10 +92,11 @@ export default function EditAnggotaPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[13px] font-semibold text-[#374151]">
-                  Nama Lengkap
+                  Nama Lengkap <span className="text-red-500">*</span>
                 </label>
                 <input
-                  defaultValue={dummyMember.name}
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
                   className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
                 />
               </div>
@@ -66,7 +105,7 @@ export default function EditAnggotaPage() {
                   ID Anggota
                 </label>
                 <div className="w-full mt-1.5 text-[14px] font-semibold text-[#B45309] bg-[#FDECC8] border border-[#F3E5C8] rounded-lg px-3.5 py-2.5">
-                  {dummyMember.memberId}
+                  {anggota.id}
                 </div>
               </div>
             </div>
@@ -74,10 +113,11 @@ export default function EditAnggotaPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[13px] font-semibold text-[#374151]">
-                  Alamat Email
+                  Alamat Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  defaultValue={dummyMember.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
                 />
               </div>
@@ -86,7 +126,8 @@ export default function EditAnggotaPage() {
                   Nomor Telepon
                 </label>
                 <input
-                  defaultValue={dummyMember.phone}
+                  value={telepon}
+                  onChange={(e) => setTelepon(e.target.value)}
                   className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
                 />
               </div>
@@ -98,13 +139,15 @@ export default function EditAnggotaPage() {
               </label>
               <div className="relative mt-1.5">
                 <select
-                  defaultValue={dummyMember.faculty}
+                  value={instansi}
+                  onChange={(e) => setInstansi(e.target.value)}
                   className="w-full appearance-none text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
                 >
-                  <option>Teknik Informatika</option>
-                  <option>Sains Lingkungan</option>
-                  <option>Fakultas Ekonomi</option>
-                  <option>Sistem Informasi</option>
+                  <option value="">Pilih Instansi</option>
+                  <option value="Teknik Informatika">Teknik Informatika</option>
+                  <option value="Sains Lingkungan">Sains Lingkungan</option>
+                  <option value="Fakultas Ekonomi">Fakultas Ekonomi</option>
+                  <option value="Sistem Informasi">Sistem Informasi</option>
                 </select>
                 <ChevronDown
                   size={16}
@@ -118,10 +161,35 @@ export default function EditAnggotaPage() {
                 Alamat Lengkap
               </label>
               <textarea
-                defaultValue={dummyMember.address}
+                value={alamat}
+                onChange={(e) => setAlamat(e.target.value)}
                 rows={4}
                 className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30 resize-none"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[13px] font-semibold text-[#374151]">
+                  Username <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
+                />
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-[#374151]">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -155,7 +223,8 @@ export default function EditAnggotaPage() {
             <div className="mt-4">
               <label className="text-[13px] font-semibold text-[#374151]">Username</label>
               <input
-                defaultValue={dummyMember.username}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               />
             </div>
@@ -177,11 +246,7 @@ export default function EditAnggotaPage() {
                     }`}
                   />
                 </button>
-                <span
-                  className={`text-[14px] font-medium ${
-                    aktif ? 'text-[#16A34A]' : 'text-[#585F6C]'
-                  }`}
-                >
+                <span className={`text-[14px] font-medium ${aktif ? 'text-[#16A34A]' : 'text-[#585F6C]'}`}>
                   {aktif ? 'Aktif' : 'Non-aktif'}
                 </span>
               </div>
@@ -197,7 +262,10 @@ export default function EditAnggotaPage() {
         >
           Batal
         </Link>
-        <button className="flex items-center gap-2 bg-[#F5A623] hover:bg-[#E0951C] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm">
+        <button
+          onClick={handleSubmit}
+          className="flex items-center gap-2 bg-[#F5A623] hover:bg-[#E0951C] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm"
+        >
           <Save size={17} />
           Simpan Perubahan
         </button>

@@ -13,6 +13,8 @@ import {
   Trash2,
   BookOpen,
 } from 'lucide-react';
+import { useBuku } from '@/lib/hooks/useBuku';
+import { deleteBook } from '@/lib/data/buku';
 
 type Status = 'Tersedia' | 'Hampir Habis' | 'Kosong';
 
@@ -28,52 +30,40 @@ const dotStyles: Record<Status, string> = {
   Kosong: 'bg-[#DC2626]',
 };
 
-const books = [
-  {
-    id: 1,
-    title: 'Arsitektur Modern Abad',
-    author: 'Budi Santoso',
-    isbn: '978-602-1234-56-1',
-    category: 'Sains & Tek',
-    stok: 24,
-    status: 'Tersedia' as Status,
-    cover: 'bg-[#F97316]',
-  },
-  {
-    id: 2,
-    title: 'Filosofi Teras',
-    author: 'Henry Manampiring',
-    isbn: '978-602-0633-17-6',
-    category: 'Self Improvement',
-    stok: 3,
-    status: 'Hampir Habis' as Status,
-    cover: 'bg-[#D9C6A5]',
-  },
-  {
-    id: 3,
-    title: 'Panduan Digital...',
-    author: 'Dewi Lestari',
-    isbn: '978-602-0522-88-2',
-    category: 'Bisnis',
-    stok: 0,
-    status: 'Kosong' as Status,
-    cover: 'bg-[#1E293B]',
-  },
-  {
-    id: 4,
-    title: 'Sejarah Nusantara...',
-    author: 'Prof. Ahmad Subarjo',
-    isbn: '978-602-0331-44-0',
-    category: 'Sejarah',
-    stok: 12,
-    status: 'Tersedia' as Status,
-    cover: 'bg-[#F5F0E6]',
-  },
-];
+const getStatus = (stok: number): Status => {
+  if (stok === 0) return 'Kosong';
+  if (stok <= 3) return 'Hampir Habis';
+  return 'Tersedia';
+};
+
+const coverColors: Record<string, string> = {
+  'Sains & Tek': 'bg-[#F97316]',
+  'Self Improvement': 'bg-[#D9C6A5]',
+  Bisnis: 'bg-[#1E293B]',
+  Sejarah: 'bg-[#F5F0E6]',
+  'Sastra Indonesia': 'bg-[#8B5A2B]',
+  Puisi: 'bg-[#A67B5B]',
+  'Fiksi Ilmiah': 'bg-[#2C3E50]',
+};
 
 export default function BukuPage() {
+  const books = useBuku(); // ← ambil data dari shared store
   const [search, setSearch] = useState('');
-  const page = 1;
+
+  const handleDelete = (id: string) => {
+    if (confirm('Yakin ingin menghapus buku ini?')) {
+      deleteBook(id);
+    }
+  };
+
+  const filteredBooks = books.filter((b) => {
+    const q = search.toLowerCase();
+    return (
+      b.judul.toLowerCase().includes(q) ||
+      b.penulis.toLowerCase().includes(q) ||
+      b.isbn.includes(q)
+    );
+  });
 
   return (
     <div>
@@ -82,7 +72,7 @@ export default function BukuPage() {
         <div>
           <h1 className="text-[24px] font-bold text-[#111827]">Koleksi Buku</h1>
           <p className="text-[14px] text-[#585F6C] mt-1">
-            Total 1,248 judul buku terdaftar dalam sistem.
+            Total {books.length} judul buku terdaftar dalam sistem.
           </p>
         </div>
         <Link
@@ -148,65 +138,72 @@ export default function BukuPage() {
             </tr>
           </thead>
           <tbody>
-            {books.map((book, i) => (
-              <tr
-                key={book.id}
-                className={i !== books.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
-              >
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-9 h-12 rounded-md flex items-center justify-center shrink-0 ${book.cover}`}
-                    >
-                      <BookOpen size={16} className="text-white/70" />
+            {filteredBooks.map((book, index) => {
+              const status = getStatus(book.stok);
+              const coverColor = coverColors[book.kategori] || 'bg-[#9CA3AF]';
+              return (
+                <tr
+                  key={book.id}
+                  className={index !== filteredBooks.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-9 h-12 rounded-md flex items-center justify-center shrink-0 ${coverColor}`}
+                      >
+                        <BookOpen size={16} className="text-white/70" />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-semibold text-[#111827]">
+                          {book.judul}
+                        </p>
+                        <p className="text-[13px] text-[#585F6C]">{book.penulis}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[14px] font-semibold text-[#111827]">
-                        {book.title}
-                      </p>
-                      <p className="text-[13px] text-[#585F6C]">{book.author}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-[14px] text-[#585F6C]">{book.isbn}</td>
-                <td className="px-6 py-4">
-                  <span className="text-[12px] font-medium text-[#2563EB] bg-[#DBEAFE] px-2.5 py-1 rounded-md">
-                    {book.category}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-[14px] font-semibold text-[#111827]">
-                  {book.stok}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full ${statusStyles[book.status]}`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[book.status]}`} />
-                    {book.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-end gap-2">
-                    <Link
-                      href={`/admin/buku/edit/${book.id}`}
-                      className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
+                  </td>
+                  <td className="px-6 py-4 text-[14px] text-[#585F6C]">{book.isbn}</td>
+                  <td className="px-6 py-4">
+                    <span className="text-[12px] font-medium text-[#2563EB] bg-[#DBEAFE] px-2.5 py-1 rounded-md">
+                      {book.kategori}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-[14px] font-semibold text-[#111827]">
+                    {book.stok}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full ${statusStyles[status]}`}
                     >
-                      <Pencil size={15} />
-                    </Link>
-                    <button className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[status]}`} />
+                      {status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/admin/buku/edit/${book.id}`}
+                        className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
+                      >
+                        <Pencil size={15} />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(book.id)}
+                        className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB]">
           <p className="text-[13px] text-[#585F6C]">
-            Menampilkan 1-10 dari 1,248 buku
+            Menampilkan {filteredBooks.length} dari {books.length} buku
           </p>
           <div className="flex items-center gap-1.5">
             <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#9CA3AF] hover:bg-[#F9FAFB]">
@@ -216,9 +213,7 @@ export default function BukuPage() {
               <button
                 key={p}
                 className={`w-8 h-8 rounded-md text-[13px] font-semibold ${
-                  p === page
-                    ? 'bg-[#B45309] text-white'
-                    : 'text-[#585F6C] hover:bg-[#F9FAFB]'
+                  p === 1 ? 'bg-[#B45309] text-white' : 'text-[#585F6C] hover:bg-[#F9FAFB]'
                 }`}
               >
                 {p}

@@ -29,7 +29,7 @@ type Buku = {
 const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B'];
 
 export default function KatalogPage() {
-  const books = useBuku();
+  const { books } = useBuku();
 
   const [search, setSearch] = useState('');
   const [kategori, setKategori] = useState('Semua');
@@ -354,7 +354,7 @@ export default function KatalogPage() {
           {keranjang.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF' }}>
               <p style={{ fontSize: '13px', margin: 0 }}>
-                Belum ada buku dipilih.<br />Klik "+ Tambah" untuk menambahkan.
+                Belum ada buku dipilih.<br />Klik &quot;+ Tambah&quot; untuk menambahkan.
               </p>
             </div>
           ) : (

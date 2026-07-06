@@ -200,7 +200,7 @@ export default function DendaPage() {
         {filtered.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center', color: '#6B7280' }}>
             <p style={{ fontSize: '14px', margin: 0 }}>
-              Tidak ada denda dengan status "{activeTab}".
+              Tidak ada denda dengan status &quot;{activeTab}&quot;.
             </p>
           </div>
         ) : (

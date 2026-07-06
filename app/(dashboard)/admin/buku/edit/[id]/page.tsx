@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   ImagePlus,
   Archive,
@@ -10,69 +10,55 @@ import {
   Plus,
   Save,
   ChevronDown,
-  BookOpen,
   X,
   FileText,
   Eye,
 } from 'lucide-react';
 import { useBukuById } from '@/lib/hooks/useBuku';
-import { updateBook } from '@/lib/data/buku';
+import { updateBook, Buku } from '@/lib/data/buku';
 
 type Kondisi = 'Baru' | 'Baik' | 'Rusak';
 
 export default function EditBukuPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
-  const book = useBukuById(id);
+  const { book, loading } = useBukuById(id);
+
+  if (loading) {
+    return <div className="p-6 text-[#585F6C]">Loading...</div>;
+  }
+
+  if (!book) {
+    return <div className="p-6">Buku tidak ditemukan</div>;
+  }
+
+  return <EditBukuForm book={book} id={id} />;
+}
+
+function EditBukuForm({ book, id }: { book: Buku; id: string }) {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── State form ───
-  const [stok, setStok] = useState(0);
+  const [stok, setStok] = useState(book.stok);
   const [kondisi, setKondisi] = useState<Kondisi>('Baik');
-  const [judul, setJudul] = useState('');
-  const [penulis, setPenulis] = useState('');
-  const [penerbit, setPenerbit] = useState('');
-  const [tahun, setTahun] = useState('');
-  const [isbn, setIsbn] = useState('');
-  const [kategori, setKategori] = useState('');
-  const [sinopsis, setSinopsis] = useState('');
+  const [judul, setJudul] = useState(book.judul);
+  const [penulis, setPenulis] = useState(book.penulis);
+  const [penerbit, setPenerbit] = useState(book.penerbit || '');
+  const [tahun, setTahun] = useState(String(book.tahun));
+  const [isbn, setIsbn] = useState(book.isbn);
+  const [kategori, setKategori] = useState(book.kategori);
+  const [sinopsis, setSinopsis] = useState(book.sinopsis);
   const [kodeRak, setKodeRak] = useState('');
 
-  // ─── State cover ───
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [coverBase64, setCoverBase64] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(book.cover);
+  const [coverBase64, setCoverBase64] = useState<string | null>(book.cover);
   const [coverChanged, setCoverChanged] = useState(false);
 
-  // ─── State preview PDF ───
-  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
-  const [previewName, setPreviewName] = useState<string | null>(null);
+  const [previewBase64, setPreviewBase64] = useState<string | null>(book.preview);
+  const [previewName, setPreviewName] = useState<string | null>(book.preview ? 'Preview.pdf' : null);
   const [previewChanged, setPreviewChanged] = useState(false);
 
-  // ─── Load data buku ───
-  useEffect(() => {
-    if (book) {
-      setJudul(book.judul);
-      setPenulis(book.penulis);
-      setPenerbit(book.penerbit || '');
-      setTahun(String(book.tahun));
-      setIsbn(book.isbn);
-      setKategori(book.kategori);
-      setSinopsis(book.sinopsis);
-      setStok(book.stok);
-      if (book.cover) {
-        setCoverPreview(book.cover);
-        setCoverBase64(book.cover);
-      }
-      if (book.preview) {
-        setPreviewBase64(book.preview);
-        setPreviewName('Preview.pdf');
-      }
-    }
-  }, [book]);
-
-  // ─── Cover handlers ───
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -99,7 +85,6 @@ export default function EditBukuPage() {
     }
   };
 
-  // ─── Preview handlers ───
   const handlePreviewChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -132,18 +117,13 @@ export default function EditBukuPage() {
     }
   };
 
-  // ─── Submit ───
-  if (!book) {
-    return <div className="p-6">Buku tidak ditemukan</div>;
-  }
-
   const handleSubmit = () => {
     if (!judul || !penulis || !kategori) {
       alert('Harap lengkapi field yang wajib (judul, penulis, kategori)');
       return;
     }
 
-    const updatedData: any = {
+    const updatedData: Partial<Buku> = {
       judul,
       penulis,
       kategori,
@@ -168,7 +148,6 @@ export default function EditBukuPage() {
 
   return (
     <div>
-      {/* Breadcrumb */}
       <div className="text-[14px] text-[#9CA3AF] flex items-center gap-2">
         <Link href="/admin/buku" className="hover:text-[#585F6C]">
           Kelola Data Buku
@@ -177,18 +156,15 @@ export default function EditBukuPage() {
         <span className="font-semibold text-[#B45309]">Edit Buku</span>
       </div>
 
-      {/* Title */}
       <div className="mt-4">
         <h1 className="text-[24px] font-bold text-[#111827]">Edit Data Buku</h1>
         <p className="text-[14px] text-[#585F6C] mt-1">
           Perbarui detail buku{' '}
-          <span className="font-semibold text-[#374151]">"{book.judul}"</span> (ID: {id}).
+          <span className="font-semibold text-[#374151]">{'\u201C'}{book.judul}{'\u201D'}</span> (ID: {id}).
         </p>
       </div>
 
-      {/* Layout: 2 columns */}
       <div className="grid grid-cols-[1fr_340px] gap-6 mt-6">
-        {/* ─── LEFT: Main Form ─── */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 space-y-5">
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
@@ -284,9 +260,7 @@ export default function EditBukuPage() {
           </div>
         </div>
 
-        {/* ─── RIGHT: Cover + Preview + Inventory ─── */}
         <div className="space-y-5">
-          {/* Sampul Buku */}
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
             <h2 className="text-[15px] font-bold text-[#111827] flex items-center gap-2">
               <ImagePlus size={18} className="text-[#B45309]" />
@@ -329,7 +303,6 @@ export default function EditBukuPage() {
             </div>
           </div>
 
-          {/* ─── PREVIEW PDF ─── */}
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
             <h2 className="text-[15px] font-bold text-[#111827] flex items-center gap-2">
               <FileText size={18} className="text-[#B45309]" />
@@ -390,7 +363,6 @@ export default function EditBukuPage() {
             </div>
           </div>
 
-          {/* Inventaris */}
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
             <div className="flex items-center gap-2">
               <Archive size={17} className="text-[#B45309]" />
@@ -458,7 +430,6 @@ export default function EditBukuPage() {
         </div>
       </div>
 
-      {/* ─── Actions ─── */}
       <div className="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-[#E5E7EB]">
         <Link
           href="/admin/buku"

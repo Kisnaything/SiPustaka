@@ -1,124 +1,125 @@
 // lib/data/anggota.ts
+import { supabase } from '@/lib/supabase/client'
 
 export interface Anggota {
-  id: string;
-  nama: string;
-  email: string;
-  telepon: string;
-  username: string;
-  password: string; // sementara plain, nanti di-hash
-  alamat: string;
-  instansi: string; // fakultas / instansi
-  status: 'AKTIF' | 'NON-AKTIF';
-  tanggal_daftar: string;
-  // tambahan untuk UI
-  pinjaman?: number; // jumlah buku dipinjam (opsional)
+  id: string
+  nama: string
+  email: string
+  telepon: string
+  alamat: string
+  instansi: string
+  status: 'AKTIF' | 'NON-AKTIF'
+  tanggal_daftar: string
+  total_pinjaman?: number
 }
 
-// Data dummy awal
-const initialAnggota: Anggota[] = [
-  {
-    id: '1',
-    nama: 'Budi Raharjo',
-    email: 'budi.ra@univ.ac.id',
-    telepon: '+62 812-3456-7890',
-    username: 'budi.ra',
-    password: 'password123',
-    alamat: 'Jl. Mulyosari No. 12, Surabaya',
-    instansi: 'Teknik Informatika',
-    status: 'AKTIF',
-    tanggal_daftar: '2023-01-12',
-    pinjaman: 3,
-  },
-  {
-    id: '2',
-    nama: 'Siti Aminah',
-    email: 'siti.am@univ.ac.id',
-    telepon: '+62 856-7890-1234',
-    username: 'siti.am',
-    password: 'password456',
-    alamat: 'Jl. Kalimantan No. 5, Surabaya',
-    instansi: 'Sains Lingkungan',
-    status: 'AKTIF',
-    tanggal_daftar: '2023-02-24',
-    pinjaman: 0,
-  },
-  {
-    id: '3',
-    nama: 'Prof. Dr. Hendra',
-    email: 'hendra.eco@univ.ac.id',
-    telepon: '+62 811-2233-4455',
-    username: 'hendra',
-    password: 'password789',
-    alamat: 'Jl. Diponegoro No. 8, Surabaya',
-    instansi: 'Fakultas Ekonomi',
-    status: 'NON-AKTIF',
-    tanggal_daftar: '2022-11-15',
-    pinjaman: 5,
-  },
-];
-
-let anggotaList: Anggota[] = [...initialAnggota];
-let listeners: (() => void)[] = [];
-
-function notify() {
-  listeners.forEach((l) => l());
+// ─── Generate ID (fallback jika crypto.randomUUID tidak tersedia) ───
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // Fallback: timestamp + random string
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10)
 }
 
-export function subscribeAnggota(listener: () => void) {
-  listeners.push(listener);
-  return () => {
-    listeners = listeners.filter((l) => l !== listener);
-  };
+// ─── GET ALL ────────────────────────────────────────────────
+export async function getAnggota(): Promise<Anggota[]> {
+  const { data, error } = await supabase
+    .from('anggota')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Supabase error (getAnggota):', error.message)
+    return []
+  }
+  return data || []
 }
 
-// CRUD
-export function getAnggota(): Anggota[] {
-  return anggotaList;
+// ─── GET BY ID ──────────────────────────────────────────────
+export async function getAnggotaById(id: string): Promise<Anggota | null> {
+  const { data, error } = await supabase
+    .from('anggota')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Supabase error (getAnggotaById):', error.message)
+    return null
+  }
+  return data
 }
 
-export function getAnggotaById(id: string): Anggota | undefined {
-  return anggotaList.find((a) => a.id === id);
-}
+// ─── ADD ────────────────────────────────────────────────────
+export async function addAnggota(anggota: Omit<Anggota, 'id' | 'tanggal_daftar'>): Promise<Anggota | null> {
+  // Generate ID menggunakan fungsi fallback
+  const id = generateId()
 
-export function addAnggota(data: Omit<Anggota, 'id' | 'tanggal_daftar'>): Anggota {
-  const newId = String(Date.now());
-  const newAnggota: Anggota = {
-    ...data,
-    id: newId,
-    tanggal_daftar: new Date().toISOString().split('T')[0], // yyyy-mm-dd
-  };
-  anggotaList = [...anggotaList, newAnggota];
-  notify();
-  return newAnggota;
-}
+  const { data, error } = await supabase
+    .from('anggota')
+    .insert([{
+      id, // ← kirim ID yang sudah digenerate
+      nama: anggota.nama,
+      email: anggota.email,
+      telepon: anggota.telepon,
+      alamat: anggota.alamat,
+      instansi: anggota.instansi,
+      status_anggota: anggota.status,
+      tanggal_daftar: new Date().toISOString().split('T')[0]
+    }])
+    .select()
+    .single()
 
-export function updateAnggota(id: string, data: Partial<Anggota>): Anggota | null {
-  let updated: Anggota | null = null;
-  anggotaList = anggotaList.map((a) => {
-    if (a.id === id) {
-      updated = { ...a, ...data };
-      return updated;
-    }
-    return a;
-  });
-  if (updated) notify();
-  return updated;
-}
-
-export function deleteAnggota(id: string): { success: boolean; message?: string } {
-  const anggota = getAnggotaById(id);
-  if (!anggota) return { success: false, message: 'Anggota tidak ditemukan' };
-
-  // Cek pinjaman aktif (jika ada)
-  if (anggota.pinjaman && anggota.pinjaman > 0) {
-    return {
-      success: false,
-      message: 'Anggota tidak dapat dihapus karena masih memiliki peminjaman aktif',
-    };
+  if (error) {
+    console.error('Supabase error (addAnggota):', error.message)
+    console.error('Detail error:', error)
+    return null
   }
 
-  anggotaList = anggotaList.filter((a) => a.id !== id);
-  notify();
-  return { success: true };
+  // Mapping balik status_anggota → status
+  return {
+    ...data,
+    status: data.status_anggota,
+  }
+}
+
+// ─── UPDATE ─────────────────────────────────────────────────
+export async function updateAnggota(id: string, data: Partial<Anggota>): Promise<Anggota | null> {
+  const updateData: any = { ...data }
+  if (data.status) {
+    updateData.status_anggota = data.status
+    delete updateData.status
+  }
+
+  const { data: updated, error } = await supabase
+    .from('anggota')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Supabase error (updateAnggota):', error.message)
+    return null
+  }
+
+  return {
+    ...updated,
+    status: updated.status_anggota,
+  }
+}
+
+// ─── DELETE ─────────────────────────────────────────────────
+export async function deleteAnggota(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('anggota')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Supabase error (deleteAnggota):', error.message)
+    return false
+  }
+  return true
 }

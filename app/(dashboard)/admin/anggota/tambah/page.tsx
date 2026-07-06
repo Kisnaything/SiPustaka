@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Image as ImageIcon, Lock, Camera, ChevronDown, Save, Sparkles } from 'lucide-react';
 import { addAnggota } from '@/lib/data/anggota';
 
@@ -10,18 +10,29 @@ export default function TambahAnggotaPage() {
   const router = useRouter();
   const [aktif, setAktif] = useState(true);
 
-  // State form
+  // ─── State form ───
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
   const [telepon, setTelepon] = useState('');
   const [instansi, setInstansi] = useState('');
   const [alamat, setAlamat] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [status, setStatus] = useState<'AKTIF' | 'NON-AKTIF'>('AKTIF');
 
-  const handleSubmit = () => {
-    if (!nama || !email || !username || !password) {
-      alert('Harap lengkapi field wajib: Nama, Email, Username, Password');
+  // ─── State ID otomatis (digenerate di client) ───
+  const [generatedId, setGeneratedId] = useState('');
+
+  useEffect(() => {
+    // Generate ID hanya di client
+    const id = crypto.randomUUID ? crypto.randomUUID() : `LIB-${Date.now()}`;
+    // Tampilkan dalam format LIB-2023-XXXX (opsional)
+    const year = new Date().getFullYear();
+    const suffix = id.slice(-4).toUpperCase();
+    setGeneratedId(`LIB-${year}-${suffix}`);
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!nama || !email) {
+      alert('Harap lengkapi field wajib: Nama dan Email');
       return;
     }
 
@@ -31,14 +42,15 @@ export default function TambahAnggotaPage() {
       telepon: telepon || '-',
       instansi: instansi || '-',
       alamat: alamat || '-',
-      username,
-      password,
-      status: aktif ? 'AKTIF' as const : 'NON-AKTIF' as const,
-      pinjaman: 0, // default
+      status: (aktif ? 'AKTIF' : 'NON-AKTIF') as 'AKTIF' | 'NON-AKTIF',
     };
 
-    addAnggota(newAnggota);
-    router.push('/admin/anggota');
+    const result = await addAnggota(newAnggota);
+    if (result) {
+      router.push('/admin/anggota');
+    } else {
+      alert('Gagal menambahkan anggota. Periksa koneksi atau data yang dimasukkan.');
+    }
   };
 
   return (
@@ -88,7 +100,7 @@ export default function TambahAnggotaPage() {
                   ID Anggota (Otomatis)
                 </label>
                 <div className="w-full mt-1.5 text-[14px] font-semibold text-[#B45309] bg-[#FDECC8] border border-[#F3E5C8] rounded-lg px-3.5 py-2.5">
-                  LIB-{new Date().getFullYear()}-{String(Math.floor(Math.random() * 10000)).padStart(4, '0')}
+                  {generatedId || 'Loading...'}
                 </div>
               </div>
             </div>
@@ -154,36 +166,11 @@ export default function TambahAnggotaPage() {
               />
             </div>
 
-            {/* Tambahan: Username & Password */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-[13px] font-semibold text-[#374151]">
-                  Username <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Buat username unik"
-                  className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
-                />
-              </div>
-              <div>
-                <label className="text-[13px] font-semibold text-[#374151]">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  type="password"
-                  placeholder="Minimal 6 karakter"
-                  className="w-full mt-1.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
-                />
-              </div>
-            </div>
+            {/* Username & Password bisa ditambahkan di sini jika diperlukan */}
           </div>
         </div>
 
-        {/* Right: foto + status */}
+        {/* Right: foto + akses akun */}
         <div className="space-y-5">
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
             <div className="flex items-center gap-2">
@@ -214,11 +201,11 @@ export default function TambahAnggotaPage() {
             <div className="mt-4">
               <label className="text-[13px] font-semibold text-[#374151]">Username</label>
               <div className="flex items-center justify-between mt-1.5 text-[14px] text-[#9CA3AF] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5">
-                {username || 'Auto-generated'}
+                {email ? email.split('@')[0] : 'Auto-generated'}
                 <Sparkles size={15} className="text-[#F5A623]" />
               </div>
               <p className="text-[12px] text-[#9CA3AF] mt-1.5">
-                Username dibuat otomatis atau bisa diisi manual.
+                Username dibuat otomatis dari alamat email.
               </p>
             </div>
 

@@ -47,12 +47,12 @@ const coverColors: Record<string, string> = {
 };
 
 export default function BukuPage() {
-  const books = useBuku(); // ← ambil data dari shared store
+  const { books, loading } = useBuku(); // ← DESTRUCTURE!
   const [search, setSearch] = useState('');
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Yakin ingin menghapus buku ini?')) {
-      deleteBook(id);
+      await deleteBook(id);
     }
   };
 
@@ -64,6 +64,10 @@ export default function BukuPage() {
       b.isbn.includes(q)
     );
   });
+
+  if (loading) {
+    return <div className="p-6 text-[#585F6C]">Loading...</div>;
+  }
 
   return (
     <div>
@@ -84,7 +88,7 @@ export default function BukuPage() {
         </Link>
       </div>
 
-      {/* Filter bar */}
+      {/* Filter bar — sama seperti sebelumnya, tidak perlu diubah */}
       <div className="flex items-center gap-3 bg-[#FFF8EE] border border-[#F3E5C8] rounded-xl px-4 py-3 mt-6">
         <div className="flex items-center gap-2 flex-1 bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
           <Search size={16} className="text-[#9CA3AF]" />

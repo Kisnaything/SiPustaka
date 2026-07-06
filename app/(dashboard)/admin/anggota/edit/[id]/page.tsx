@@ -11,54 +11,60 @@ export default function EditAnggotaPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const anggota = useAnggotaById(id);
+  const { anggota, loading: loadingData } = useAnggotaById(id);
+  const [loading, setLoading] = useState(false);
 
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
   const [telepon, setTelepon] = useState('');
   const [instansi, setInstansi] = useState('');
   const [alamat, setAlamat] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [aktif, setAktif] = useState(true);
+  const [status, setStatus] = useState<'AKTIF' | 'NON-AKTIF'>('AKTIF');
 
   useEffect(() => {
     if (anggota) {
       setNama(anggota.nama);
       setEmail(anggota.email);
-      setTelepon(anggota.telepon);
-      setInstansi(anggota.instansi);
-      setAlamat(anggota.alamat);
-      setUsername(anggota.username);
-      setPassword(anggota.password);
-      setAktif(anggota.status === 'AKTIF');
+      setTelepon(anggota.telepon || '');
+      setInstansi(anggota.instansi || '');
+      setAlamat(anggota.alamat || '');
+      setStatus(anggota.status);
     }
   }, [anggota]);
+
+  const handleSubmit = async () => {
+    if (!nama || !email) {
+      alert('Harap lengkapi field wajib: Nama dan Email');
+      return;
+    }
+
+    setLoading(true);
+    const updatedData = {
+      nama,
+      email,
+      telepon: telepon || '-',
+      instansi: instansi || '-',
+      alamat: alamat || '-',
+      status,
+    };
+
+    const result = await updateAnggota(id, updatedData);
+    setLoading(false);
+
+    if (result) {
+      router.push('/admin/anggota');
+    } else {
+      alert('Gagal memperbarui anggota. Periksa koneksi atau data yang dimasukkan.');
+    }
+  };
+
+  if (loadingData) {
+    return <div className="p-6 text-[#585F6C]">Loading...</div>;
+  }
 
   if (!anggota) {
     return <div className="p-6">Anggota tidak ditemukan</div>;
   }
-
-  const handleSubmit = () => {
-    if (!nama || !email || !username || !password) {
-      alert('Harap lengkapi field wajib: Nama, Email, Username, Password');
-      return;
-    }
-
-    const updatedData = {
-      nama,
-      email,
-      telepon,
-      instansi,
-      alamat,
-      username,
-      password,
-      status: aktif ? 'AKTIF' as const : 'NON-AKTIF' as const,
-    };
-
-    updateAnggota(id, updatedData);
-    router.push('/admin/anggota');
-  };
 
   return (
     <div>
@@ -76,7 +82,7 @@ export default function EditAnggotaPage() {
         <h1 className="text-[24px] font-bold text-[#111827]">Edit Data Anggota</h1>
         <p className="text-[14px] text-[#585F6C] mt-1">
           Perbarui informasi keanggotaan{' '}
-          <span className="font-semibold text-[#374151]">{anggota.nama}</span> (ID: {id}).
+          <span className="font-semibold text-[#374151]">{anggota.nama}</span> (ID: {id.slice(0, 8)}...).
         </p>
       </div>
 
@@ -105,7 +111,7 @@ export default function EditAnggotaPage() {
                   ID Anggota
                 </label>
                 <div className="w-full mt-1.5 text-[14px] font-semibold text-[#B45309] bg-[#FDECC8] border border-[#F3E5C8] rounded-lg px-3.5 py-2.5">
-                  {anggota.id}
+                  {id.slice(0, 8)}...
                 </div>
               </div>
             </div>
@@ -167,30 +173,6 @@ export default function EditAnggotaPage() {
                 className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30 resize-none"
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-[13px] font-semibold text-[#374151]">
-                  Username <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
-                />
-              </div>
-              <div>
-                <label className="text-[13px] font-semibold text-[#374151]">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  type="password"
-                  className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
-                />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -223,10 +205,13 @@ export default function EditAnggotaPage() {
             <div className="mt-4">
               <label className="text-[13px] font-semibold text-[#374151]">Username</label>
               <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
+                value={email.split('@')[0] || ''}
+                disabled
+                className="w-full mt-1.5 text-[14px] text-[#9CA3AF] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none cursor-not-allowed"
               />
+              <p className="text-[12px] text-[#9CA3AF] mt-1.5">
+                Username berdasarkan email dan tidak dapat diubah.
+              </p>
             </div>
 
             <div className="mt-5">
@@ -235,19 +220,19 @@ export default function EditAnggotaPage() {
               </label>
               <div className="flex items-center gap-2.5 mt-2">
                 <button
-                  onClick={() => setAktif((v) => !v)}
+                  onClick={() => setStatus((s) => (s === 'AKTIF' ? 'NON-AKTIF' : 'AKTIF'))}
                   className={`w-11 h-6 rounded-full relative transition-colors ${
-                    aktif ? 'bg-[#16A34A]' : 'bg-[#D1D5DB]'
+                    status === 'AKTIF' ? 'bg-[#16A34A]' : 'bg-[#D1D5DB]'
                   }`}
                 >
                   <span
                     className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                      aktif ? 'translate-x-[22px]' : 'translate-x-0.5'
+                      status === 'AKTIF' ? 'translate-x-[22px]' : 'translate-x-0.5'
                     }`}
                   />
                 </button>
-                <span className={`text-[14px] font-medium ${aktif ? 'text-[#16A34A]' : 'text-[#585F6C]'}`}>
-                  {aktif ? 'Aktif' : 'Non-aktif'}
+                <span className={`text-[14px] font-medium ${status === 'AKTIF' ? 'text-[#16A34A]' : 'text-[#585F6C]'}`}>
+                  {status === 'AKTIF' ? 'Aktif' : 'Non-aktif'}
                 </span>
               </div>
             </div>
@@ -264,14 +249,15 @@ export default function EditAnggotaPage() {
         </Link>
         <button
           onClick={handleSubmit}
-          className="flex items-center gap-2 bg-[#F5A623] hover:bg-[#E0951C] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm"
+          disabled={loading}
+          className={`flex items-center gap-2 bg-[#F5A623] hover:bg-[#E0951C] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           <Save size={17} />
-          Simpan Perubahan
+          {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
         </button>
       </div>
     </div>
-
-    
   );
 }

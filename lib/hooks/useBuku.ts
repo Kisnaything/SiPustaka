@@ -1,71 +1,39 @@
-// lib/hooks/useBuku.ts
-import { useEffect, useState } from 'react';
-import { getBooks, getBookById, subscribe, Buku } from '@/lib/data/buku';
+import { useEffect, useState } from 'react'
+import { getBooks, getBookById, Buku } from '@/lib/data/buku'
 
-// Hook untuk semua buku
 export function useBuku() {
-  const [books, setBooks] = useState<Buku[]>([]);
-
-  const refresh = () => {
-    setBooks(getBooks());
-  };
+  const [books, setBooks] = useState<Buku[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    refresh();
-
-    const unsubscribe = subscribe(refresh);
-
-    // Listener untuk storage event (sinkron antar tab)
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_buku') {
-        refresh();
+    let cancelled = false
+    getBooks().then(data => {
+      if (!cancelled) {
+        setBooks(data)
+        setLoading(false)
       }
-    };
+    })
+    return () => { cancelled = true }
+  }, [])
 
-    // Juga tangkap event custom yang kita dispatch dari add/update/delete
-    const handleCustom = () => refresh();
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
-    return () => {
-      unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
-    };
-  }, []);
-
-  return books;
+  return { books, loading, refetch: () => getBooks().then(data => setBooks(data)) }
 }
 
-// Hook untuk satu buku (by id)
 export function useBukuById(id: string) {
-  const [book, setBook] = useState<Buku | undefined>(undefined);
-
-  const refresh = () => {
-    setBook(getBookById(id));
-  };
+  const [book, setBook] = useState<Buku | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    refresh();
-
-    const unsubscribe = subscribe(refresh);
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_buku') {
-        refresh();
+    if (!id) return
+    let cancelled = false
+    getBookById(id).then(data => {
+      if (!cancelled) {
+        setBook(data)
+        setLoading(false)
       }
-    };
-    const handleCustom = () => refresh();
+    })
+    return () => { cancelled = true }
+  }, [id])
 
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
-    return () => {
-      unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
-    };
-  }, [id]);
-
-  return book;
+  return { book, loading, refetch: () => getBookById(id).then(data => setBook(data)) }
 }

@@ -10,10 +10,16 @@ const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8
 export default function DetailBukuPage() {
   const params = useParams()
   const id = params.id as string
-  const buku = useBukuById(id)
+  const { book: buku, loading } = useBukuById(id)
 
   const [ditambahkan, setDitambahkan] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+
+  if (loading) {
+    return <div style={{ padding: '48px', textAlign: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <p style={{ fontSize: '16px', color: '#6B7280' }}>Loading...</p>
+    </div>
+  }
 
   if (!buku) {
     return (

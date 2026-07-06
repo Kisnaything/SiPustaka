@@ -1,4 +1,3 @@
-// lib/hooks/usePeminjaman.ts
 import { useEffect, useState } from 'react';
 import {
   getPeminjaman,
@@ -10,27 +9,32 @@ import {
   Peminjaman,
 } from '@/lib/data/peminjaman';
 
+function createStorageHandlers(refresh: () => void) {
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === 'sipustaka_peminjaman') refresh();
+  };
+  const handleCustom = () => refresh();
+
+  window.addEventListener('storage', handleStorage);
+  window.addEventListener('custom-storage-update', handleCustom);
+
+  return () => {
+    window.removeEventListener('storage', handleStorage);
+    window.removeEventListener('custom-storage-update', handleCustom);
+  };
+}
+
 export function usePeminjaman() {
-  const [data, setData] = useState<Peminjaman[]>([]);
+  const [data, setData] = useState<Peminjaman[]>(getPeminjaman);
 
   const refresh = () => setData(getPeminjaman());
 
   useEffect(() => {
-    refresh();
     const unsubscribe = subscribePeminjaman(refresh);
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_peminjaman') refresh();
-    };
-    const handleCustom = () => refresh();
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
+    const cleanup = createStorageHandlers(refresh);
     return () => {
       unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
+      cleanup();
     };
   }, []);
 
@@ -38,26 +42,16 @@ export function usePeminjaman() {
 }
 
 export function usePeminjamanMenunggu() {
-  const [data, setData] = useState<Peminjaman[]>([]);
+  const [data, setData] = useState<Peminjaman[]>(getPeminjamanMenunggu);
 
   const refresh = () => setData(getPeminjamanMenunggu());
 
   useEffect(() => {
-    refresh();
     const unsubscribe = subscribePeminjaman(refresh);
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_peminjaman') refresh();
-    };
-    const handleCustom = () => refresh();
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
+    const cleanup = createStorageHandlers(refresh);
     return () => {
       unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
+      cleanup();
     };
   }, []);
 
@@ -65,26 +59,16 @@ export function usePeminjamanMenunggu() {
 }
 
 export function usePeminjamanAktif() {
-  const [data, setData] = useState<Peminjaman[]>([]);
+  const [data, setData] = useState<Peminjaman[]>(getPeminjamanAktif);
 
   const refresh = () => setData(getPeminjamanAktif());
 
   useEffect(() => {
-    refresh();
     const unsubscribe = subscribePeminjaman(refresh);
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_peminjaman') refresh();
-    };
-    const handleCustom = () => refresh();
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
+    const cleanup = createStorageHandlers(refresh);
     return () => {
       unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
+      cleanup();
     };
   }, []);
 
@@ -92,26 +76,16 @@ export function usePeminjamanAktif() {
 }
 
 export function usePeminjamanById(id: string) {
-  const [data, setData] = useState<Peminjaman | undefined>();
+  const [data, setData] = useState<Peminjaman | undefined>(() => getPeminjamanById(id));
 
   const refresh = () => setData(getPeminjamanById(id));
 
   useEffect(() => {
-    refresh();
     const unsubscribe = subscribePeminjaman(refresh);
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_peminjaman') refresh();
-    };
-    const handleCustom = () => refresh();
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
+    const cleanup = createStorageHandlers(refresh);
     return () => {
       unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
+      cleanup();
     };
   }, [id]);
 
@@ -119,26 +93,16 @@ export function usePeminjamanById(id: string) {
 }
 
 export function usePeminjamanByKode(kode: string) {
-  const [data, setData] = useState<Peminjaman | undefined>();
+  const [data, setData] = useState<Peminjaman | undefined>(() => getPeminjamanByKode(kode));
 
   const refresh = () => setData(getPeminjamanByKode(kode));
 
   useEffect(() => {
-    refresh();
     const unsubscribe = subscribePeminjaman(refresh);
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_peminjaman') refresh();
-    };
-    const handleCustom = () => refresh();
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
+    const cleanup = createStorageHandlers(refresh);
     return () => {
       unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
+      cleanup();
     };
   }, [kode]);
 

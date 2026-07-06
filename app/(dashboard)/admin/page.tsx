@@ -33,12 +33,19 @@ function formatDate(dateStr: string) {
 }
 
 export default function DashboardPage() {
-  // ─── Data dari store ──────────────────────────────────────
-  const bukuList = useBuku();
-  const anggotaList = useAnggota();
-  const peminjamanList = usePeminjaman();
+  // ─── HOOKS (dipanggil di level atas) ──────────────────
+  const { books: bukuList, loading: loadingBuku } = useBuku();
+  const anggotaData = useAnggota(); // ← LANGSUNG ARRAY
+  const peminjamanData = usePeminjaman(); // ← LANGSUNG ARRAY
 
-  // ─── Statistik ────────────────────────────────────────────
+  // ─── Ambil data dengan fallback ────────────────────────
+  const anggotaList = Array.isArray(anggotaData) ? anggotaData : [];
+  const peminjamanList = Array.isArray(peminjamanData) ? peminjamanData : [];
+
+  const [now] = useState(() => Date.now());
+  const [year, setYear] = useState('Tahun ' + new Date().getFullYear());
+
+  // ─── useMemo (sebelum conditional return) ──────────────
   const stats = useMemo(() => {
     const totalBuku = bukuList.length;
     const anggotaAktif = anggotaList.filter((a) => a.status === 'AKTIF').length;
@@ -55,7 +62,6 @@ export default function DashboardPage() {
     };
   }, [bukuList, anggotaList, peminjamanList]);
 
-  // ─── Aktivitas Terbaru ────────────────────────────────────
   const recentActivities = useMemo(() => {
     const sorted = [...peminjamanList].sort(
       (a, b) => new Date(b.tanggal_reservasi).getTime() - new Date(a.tanggal_reservasi).getTime()
@@ -69,7 +75,7 @@ export default function DashboardPage() {
       let iconColor = 'text-[#2563EB]';
       let time = 'Baru saja';
 
-      const diffMs = Date.now() - new Date(p.tanggal_reservasi).getTime();
+      const diffMs = now - new Date(p.tanggal_reservasi).getTime();
       const diffMin = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
       if (diffMin < 1) time = 'Baru saja';
@@ -101,9 +107,8 @@ export default function DashboardPage() {
 
       return { icon, iconBg, iconColor, title, time };
     });
-  }, [peminjamanList]);
+  }, [peminjamanList, now]);
 
-  // ─── Peminjaman Jatuh Tempo ──────────────────────────────
   const dueSoonData = useMemo(() => {
     const now = new Date();
     const aktif = peminjamanList.filter(
@@ -132,7 +137,6 @@ export default function DashboardPage() {
     });
   }, [peminjamanList]);
 
-  // ─── Grafik ────────────────────────────────────────────────
   const monthData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     const currentYear = new Date().getFullYear();
@@ -156,9 +160,13 @@ export default function DashboardPage() {
   }, [peminjamanList]);
 
   const maxValue = Math.max(...monthData.values, 1);
-  const [year, setYear] = useState('Tahun ' + new Date().getFullYear());
 
-  // ─── Stat cards ────────────────────────────────────────────
+  // ─── Conditional rendering ─────────────────────────────
+  if (loadingBuku) {
+    return <div className="p-6 text-[#585F6C]">Loading...</div>;
+  }
+
+  // ─── Stat cards ──────────────────────────────────────────
   const statCards = [
     {
       label: 'Total Buku',

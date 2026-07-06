@@ -1,27 +1,39 @@
 // lib/hooks/useAnggota.ts
-import { useEffect, useState } from 'react';
-import { getAnggota, getAnggotaById, subscribeAnggota, Anggota } from '@/lib/data/anggota';
+import { useEffect, useState } from 'react'
+import { getAnggota, getAnggotaById, Anggota } from '@/lib/data/anggota'
 
 export function useAnggota() {
-  const [data, setData] = useState<Anggota[]>([]);
+  const [anggota, setAnggota] = useState<Anggota[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchAnggota = async () => {
+    setLoading(true)
+    const data = await getAnggota()
+    setAnggota(data)
+    setLoading(false)
+  }
 
   useEffect(() => {
-    setData(getAnggota());
-    const unsubscribe = subscribeAnggota(() => setData(getAnggota()));
-    return unsubscribe;
-  }, []);
+    fetchAnggota()
+  }, [])
 
-  return data;
+  return { anggota, loading, refetch: fetchAnggota }
 }
 
 export function useAnggotaById(id: string) {
-  const [data, setData] = useState<Anggota | undefined>();
+  const [anggota, setAnggota] = useState<Anggota | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchAnggota = async () => {
+    setLoading(true)
+    const data = await getAnggotaById(id)
+    setAnggota(data)
+    setLoading(false)
+  }
 
   useEffect(() => {
-    setData(getAnggotaById(id));
-    const unsubscribe = subscribeAnggota(() => setData(getAnggotaById(id)));
-    return unsubscribe;
-  }, [id]);
+    if (id) fetchAnggota()
+  }, [id])
 
-  return data;
+  return { anggota, loading, refetch: fetchAnggota }
 }

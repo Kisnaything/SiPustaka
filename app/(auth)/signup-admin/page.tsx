@@ -4,56 +4,82 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookMarked, Eye, EyeOff, UploadCloud, AlertCircle } from "lucide-react";
-import {
-  useRegisterAnggota,
-  type AnggotaFormData,
-} from "@/lib/hooks/useRegisterAnggota";
 
-const initialForm: AnggotaFormData = {
+type AdminFormData = {
+  namaLengkap: string;
+  email: string;
+  noTelepon: string;
+  username: string;
+  password: string;
+  kodeAkses: string;
+  fotoProfil: File | null;
+};
+
+type FieldErrors = Partial<Record<keyof AdminFormData, string>>;
+
+const initialForm: AdminFormData = {
   namaLengkap: "",
-  tanggalLahir: "",
-  alamat: "",
-  noTelepon: "",
   email: "",
+  noTelepon: "",
   username: "",
   password: "",
-  konfirmasiPassword: "",
+  kodeAkses: "",
   fotoProfil: null,
 };
 
-type FieldErrors = Partial<Record<keyof AnggotaFormData, string>>;
+// Ini hanya dummy untuk frontend.
+// Nanti kalau sudah pakai database, validasi kode admin lebih baik dipindahkan ke backend/server.
+const ADMIN_ACCESS_CODE = "ADMIN123";
 
-export default function SignupAnggotaPage() {
+export default function SignupAdminPage() {
   const router = useRouter();
-  const { registerAnggota, isLoading } = useRegisterAnggota();
 
-  const [form, setForm] = useState<AnggotaFormData>(initialForm);
+  const [form, setForm] = useState<AdminFormData>(initialForm);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [fotoName, setFotoName] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function update<K extends keyof AnggotaFormData>(
+  function update<K extends keyof AdminFormData>(
     key: K,
-    value: AnggotaFormData[K]
+    value: AdminFormData[K]
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+    setServerMessage(null);
   }
 
   function validate(): boolean {
     const next: FieldErrors = {};
 
-    (Object.keys(form) as (keyof AnggotaFormData)[]).forEach((key) => {
-      if (key === "fotoProfil") return;
+    if (!form.namaLengkap.trim()) {
+      next.namaLengkap = "Field ini wajib diisi";
+    }
 
-      if (!String(form[key]).trim()) {
-        next[key] = "Field ini wajib diisi";
-      }
-    });
+    if (!form.email.trim()) {
+      next.email = "Field ini wajib diisi";
+    }
+
+    if (!form.noTelepon.trim()) {
+      next.noTelepon = "Field ini wajib diisi";
+    }
+
+    if (!form.username.trim()) {
+      next.username = "Field ini wajib diisi";
+    }
+
+    if (!form.password.trim()) {
+      next.password = "Field ini wajib diisi";
+    }
+
+    if (!form.kodeAkses.trim()) {
+      next.kodeAkses = "Field ini wajib diisi";
+    } else if (form.kodeAkses.trim() !== ADMIN_ACCESS_CODE) {
+      next.kodeAkses = "Kode akses tidak valid. Silakan hubungi koordinator IT.";
+    }
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -65,29 +91,42 @@ export default function SignupAnggotaPage() {
 
     if (!validate()) return;
 
-    const result = await registerAnggota(form);
+    setIsLoading(true);
 
-    if (!result.success) {
-      setServerMessage(result.message);
+    try {
+      // Frontend only dulu.
+      // Nanti bagian ini bisa diganti dengan insert ke Supabase.
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      if (result.field) {
-        setErrors((prev) => ({
-          ...prev,
-          [result.field!]: result.message,
-        }));
-      }
-
-      return;
+      router.push("/login?daftar=admin-berhasil");
+    } catch {
+      setServerMessage("Gagal mendaftarkan admin. Silakan coba lagi.");
+    } finally {
+      setIsLoading(false);
     }
-
-    router.push("/login?daftar=berhasil");
   }
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
 
+    if (!file) {
+      update("fotoProfil", null);
+      setFotoName(null);
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setServerMessage("Format foto harus JPG atau PNG.");
+      e.target.value = "";
+      update("fotoProfil", null);
+      setFotoName(null);
+      return;
+    }
+
     update("fotoProfil", file);
-    setFotoName(file?.name ?? null);
+    setFotoName(file.name);
   }
 
   return (
@@ -99,11 +138,11 @@ export default function SignupAnggotaPage() {
           </div>
 
           <h1 className="text-xl font-bold text-gray-900">
-            Daftar sebagai Anggota
+            Daftar sebagai Admin
           </h1>
 
           <p className="text-[13px] text-gray-400">
-            Isi data diri sesuai identitas kamu
+            Khusus staf perpustakaan yang berwenang
           </p>
         </div>
 
@@ -112,31 +151,22 @@ export default function SignupAnggotaPage() {
             <input
               value={form.namaLengkap}
               onChange={(e) => update("namaLengkap", e.target.value)}
-              placeholder="Nama lengkap kamu"
+              placeholder="Nama lengkap admin"
               className={inputClass(!!errors.namaLengkap)}
             />
           </Field>
 
-          <Field label="Tanggal Lahir" error={errors.tanggalLahir}>
-            <input
-              type="date"
-              value={form.tanggalLahir}
-              onChange={(e) => update("tanggalLahir", e.target.value)}
-              className={inputClass(!!errors.tanggalLahir)}
-            />
-          </Field>
-
-          <Field label="Alamat" error={errors.alamat}>
-            <textarea
-              value={form.alamat}
-              onChange={(e) => update("alamat", e.target.value)}
-              placeholder="Alamat lengkap saat ini"
-              rows={3}
-              className={inputClass(!!errors.alamat)}
-            />
-          </Field>
-
           <div className="grid grid-cols-2 gap-3">
+            <Field label="Email" error={errors.email}>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => update("email", e.target.value)}
+                placeholder="staf@sipustaka.id"
+                className={inputClass(!!errors.email)}
+              />
+            </Field>
+
             <Field label="No. Telepon" error={errors.noTelepon}>
               <input
                 value={form.noTelepon}
@@ -145,75 +175,37 @@ export default function SignupAnggotaPage() {
                 className={inputClass(!!errors.noTelepon)}
               />
             </Field>
-
-            <Field label="Email" error={errors.email}>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => update("email", e.target.value)}
-                placeholder="email@contoh.com"
-                className={inputClass(!!errors.email)}
-              />
-            </Field>
           </div>
 
           <Field label="Username" error={errors.username}>
             <input
               value={form.username}
               onChange={(e) => update("username", e.target.value)}
-              placeholder="username_kamu"
+              placeholder="admin_sipustaka"
               className={inputClass(!!errors.username)}
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Password" error={errors.password}>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  placeholder="Min. 8 karakter"
-                  className={inputClass(!!errors.password) + " pr-9"}
-                />
+          <Field label="Password" error={errors.password}>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(e) => update("password", e.target.value)}
+                placeholder="Min. 8 karakter"
+                className={inputClass(!!errors.password) + " pr-9"}
+              />
 
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Tampilkan/sembunyikan password"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </Field>
-
-            <Field
-              label="Konfirmasi Password"
-              error={errors.konfirmasiPassword}
-            >
-              <div className="relative">
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  value={form.konfirmasiPassword}
-                  onChange={(e) =>
-                    update("konfirmasiPassword", e.target.value)
-                  }
-                  placeholder="Ulangi password"
-                  className={inputClass(!!errors.konfirmasiPassword) + " pr-9"}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Tampilkan/sembunyikan konfirmasi password"
-                >
-                  {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </Field>
-          </div>
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label="Tampilkan/sembunyikan password"
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </Field>
 
           <div>
             <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
@@ -242,6 +234,15 @@ export default function SignupAnggotaPage() {
             />
           </div>
 
+          <Field label="Kode Akses Admin" error={errors.kodeAkses}>
+            <input
+              value={form.kodeAkses}
+              onChange={(e) => update("kodeAkses", e.target.value)}
+              placeholder="Masukkan kode akses"
+              className={inputClass(!!errors.kodeAkses)}
+            />
+          </Field>
+
           {serverMessage && (
             <p className="flex items-center gap-1.5 text-[12px] text-red-500">
               <AlertCircle size={13} />
@@ -254,7 +255,7 @@ export default function SignupAnggotaPage() {
             disabled={isLoading}
             className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-2.5 rounded-xl text-[13px] font-medium transition-colors"
           >
-            {isLoading ? "Memproses..." : "Daftar Sekarang"}
+            {isLoading ? "Memproses..." : "Daftar sebagai Admin"}
           </button>
         </form>
 
@@ -270,12 +271,12 @@ export default function SignupAnggotaPage() {
           </p>
 
           <p className="text-center text-[11px] text-gray-400">
-            Ingin daftar sebagai administrator?{" "}
+            Bukan admin?{" "}
             <Link
-              href="/signup-admin"
+              href="/signup-anggota"
               className="text-amber-600 hover:text-amber-700 font-medium"
             >
-              Daftar admin
+              Daftar sebagai anggota
             </Link>
           </p>
         </div>

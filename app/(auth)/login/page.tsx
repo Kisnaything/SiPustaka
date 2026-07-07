@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import {
   AlertCircle,
   BookMarked,
@@ -13,7 +14,6 @@ import {
 type LoginForm = {
   email: string;
   password: string;
-  rememberMe: boolean;
 };
 
 type FieldErrors = Partial<Record<keyof LoginForm, string>>;
@@ -21,7 +21,6 @@ type FieldErrors = Partial<Record<keyof LoginForm, string>>;
 const initialForm: LoginForm = {
   email: "",
   password: "",
-  rememberMe: false,
 };
 
 export default function LoginPage() {
@@ -62,13 +61,28 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Frontend only dulu.
-      // Nanti bagian ini bisa diganti dengan proses login Supabase.
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
 
-      router.push("/dashboard");
+      if (error) {
+        setServerMessage("Email atau password salah.");
+        return;
+      }
+
+      const role = data.user?.user_metadata?.role;
+
+      if (role === "admin") {
+        router.push("/admin");
+      } else if (role === "member") {
+        router.push("/member");
+      } else {
+        await supabase.auth.signOut();
+        setServerMessage("Akun tidak memiliki role yang valid.");
+      }
     } catch {
-      setServerMessage("Gagal masuk. Periksa email dan password kamu.");
+      setServerMessage("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
     }
@@ -126,17 +140,7 @@ export default function LoginPage() {
             </div>
           </Field>
 
-          <div className="flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-[12px] text-gray-400 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={form.rememberMe}
-                onChange={(e) => update("rememberMe", e.target.checked)}
-                className="h-4 w-4 rounded border-gray-200 text-amber-500 focus:ring-amber-200"
-              />
-              Ingat saya
-            </label>
-
+          <div className="flex items-center justify-end gap-3">
             <Link
               href="/lupa-pass"
               className="text-[12px] font-medium text-amber-700 hover:text-amber-800"

@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
 
 // Icon components dengan warna dinamis
 function IconDashboard({ color }: { color: string }) {
@@ -52,8 +53,14 @@ const menuItems = [
   { label: 'Profil', href: '/member/profil', icon: IconProfil },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ memberName, memberId }: { memberName?: string; memberId?: string }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
 
   const isActive = (href: string) => {
     if (href === '/member') return pathname === '/member'
@@ -153,35 +160,66 @@ export default function Sidebar() {
       <div style={{
         padding: '16px 20px',
         borderTop: '1px solid #E5E7EB',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
       }}>
         <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '50%',
-          backgroundColor: '#E8D5B7',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
+          gap: '10px',
+          marginBottom: '12px',
         }}>
-          <IconProfil color="#7B4F1E" />
-        </div>
-        <div>
           <div style={{
-            fontSize: '13px',
-            fontWeight: 600,
-            color: '#111827',
-            lineHeight: 1.3,
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: '#E8D5B7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
           }}>
-            Nama Anggota
+            <IconProfil color="#7B4F1E" />
           </div>
-          <div style={{ fontSize: '11px', color: '#6B7280' }}>
-            A-00000000
+          <div>
+            <div style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#111827',
+              lineHeight: 1.3,
+            }}>
+              {memberName || 'Anggota'}
+            </div>
+            <div style={{ fontSize: '11px', color: '#6B7280' }}>
+              {memberId ? `A-${memberId}` : 'A-00000000'}
+            </div>
           </div>
         </div>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            border: '1px solid #FCA5A5',
+            borderRadius: '8px',
+            backgroundColor: '#FEF2F2',
+            color: '#DC2626',
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#FEE2E2'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#FEF2F2'
+          }}
+        >
+          Keluar
+        </button>
       </div>
     </aside>
   )

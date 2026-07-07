@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookMarked, Eye, EyeOff, UploadCloud, AlertCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { BookMarked, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 type AdminFormData = {
   namaLengkap: string;
@@ -12,7 +13,6 @@ type AdminFormData = {
   username: string;
   password: string;
   kodeAkses: string;
-  fotoProfil: File | null;
 };
 
 type FieldErrors = Partial<Record<keyof AdminFormData, string>>;
@@ -24,11 +24,8 @@ const initialForm: AdminFormData = {
   username: "",
   password: "",
   kodeAkses: "",
-  fotoProfil: null,
 };
 
-// Ini hanya dummy untuk frontend.
-// Nanti kalau sudah pakai database, validasi kode admin lebih baik dipindahkan ke backend/server.
 const ADMIN_ACCESS_CODE = "ADMIN123";
 
 export default function SignupAdminPage() {
@@ -37,11 +34,8 @@ export default function SignupAdminPage() {
   const [form, setForm] = useState<AdminFormData>(initialForm);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [fotoName, setFotoName] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const fileRef = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof AdminFormData>(
     key: K,
@@ -75,6 +69,10 @@ export default function SignupAdminPage() {
       next.password = "Field ini wajib diisi";
     }
 
+    if (form.password.length < 8) {
+      next.password = "Password minimal 8 karakter";
+    }
+
     if (!form.kodeAkses.trim()) {
       next.kodeAkses = "Field ini wajib diisi";
     } else if (form.kodeAkses.trim() !== ADMIN_ACCESS_CODE) {
@@ -94,39 +92,50 @@ export default function SignupAdminPage() {
     setIsLoading(true);
 
     try {
-      // Frontend only dulu.
-      // Nanti bagian ini bisa diganti dengan insert ke Supabase.
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            role: "admin",
+            nama_lengkap: form.namaLengkap,
+          },
+        },
+      });
 
+      if (error) {
+        setServerMessage(error.message);
+        return;
+      }
+
+      if (!data.user) {
+        setServerMessage("Gagal mendaftarkan admin. Silakan coba lagi.");
+        return;
+      }
+
+      const { error: insertError } = await supabase.from("users").insert({
+        id: data.user.id,
+        nama: form.namaLengkap,
+        email: form.email,
+        telepon: form.noTelepon,
+        username: form.username,
+        role: "admin",
+        status: "AKTIF",
+      });
+
+      if (insertError) {
+        await supabase.auth.admin?.deleteUser(data.user.id);
+        setServerMessage("Gagal menyimpan data admin.");
+        return;
+      }
+
+      await supabase.auth.signOut();
       router.push("/login?daftar=admin-berhasil");
     } catch {
       setServerMessage("Gagal mendaftarkan admin. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
     }
-  }
-
-  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null;
-
-    if (!file) {
-      update("fotoProfil", null);
-      setFotoName(null);
-      return;
-    }
-
-    const allowedTypes = ["image/jpeg", "image/png"];
-
-    if (!allowedTypes.includes(file.type)) {
-      setServerMessage("Format foto harus JPG atau PNG.");
-      e.target.value = "";
-      update("fotoProfil", null);
-      setFotoName(null);
-      return;
-    }
-
-    update("fotoProfil", file);
-    setFotoName(file.name);
   }
 
   return (
@@ -206,33 +215,6 @@ export default function SignupAdminPage() {
               </button>
             </div>
           </Field>
-
-          <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-              Foto Profil
-            </label>
-
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-amber-200 rounded-xl py-6 flex flex-col items-center gap-2 text-gray-500 hover:bg-amber-50/50 transition-colors"
-            >
-              <UploadCloud size={20} className="text-gray-500" />
-
-              <span className="text-[12px] text-center px-4">
-                {fotoName ??
-                  "Klik untuk unggah foto profil (JPG, PNG) — Opsional"}
-              </span>
-            </button>
-
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className="hidden"
-              onChange={handleFotoChange}
-            />
-          </div>
 
           <Field label="Kode Akses Admin" error={errors.kodeAkses}>
             <input

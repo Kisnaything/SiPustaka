@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import {
   AlertCircle,
   ArrowLeft,
@@ -27,6 +28,14 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
+  useEffect(() => {
+    supabase.auth.onAuthStateChange(async (event) => {
+      if (event !== "PASSWORD_RECOVERY") {
+        router.push("/login");
+      }
+    });
+  }, [router]);
+
   function getPasswordStrength() {
     let score = 0;
 
@@ -39,7 +48,7 @@ export default function ResetPasswordPage() {
 
   const strength = getPasswordStrength();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -65,10 +74,18 @@ export default function ResetPasswordPage() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowSuccessPopup(true);
-    }, 700);
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: passwordBaru,
+    });
+
+    setIsLoading(false);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    setShowSuccessPopup(true);
   }
 
   return (

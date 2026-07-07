@@ -8,6 +8,8 @@ export interface Anggota {
   telepon: string
   alamat: string
   instansi: string
+  role: string
+  username?: string
   status: 'AKTIF' | 'NON-AKTIF'
   tanggal_daftar: string
   total_pinjaman?: number
@@ -25,7 +27,7 @@ function generateId(): string {
 // ─── GET ALL ────────────────────────────────────────────────
 export async function getAnggota(): Promise<Anggota[]> {
   const { data, error } = await supabase
-    .from('anggota')
+    .from('users')
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -39,7 +41,7 @@ export async function getAnggota(): Promise<Anggota[]> {
 // ─── GET BY ID ──────────────────────────────────────────────
 export async function getAnggotaById(id: string): Promise<Anggota | null> {
   const { data, error } = await supabase
-    .from('anggota')
+    .from('users')
     .select('*')
     .eq('id', id)
     .single()
@@ -52,20 +54,21 @@ export async function getAnggotaById(id: string): Promise<Anggota | null> {
 }
 
 // ─── ADD ────────────────────────────────────────────────────
-export async function addAnggota(anggota: Omit<Anggota, 'id' | 'tanggal_daftar'>): Promise<Anggota | null> {
+export async function addAnggota(anggota: Omit<Anggota, 'id' | 'tanggal_daftar' | 'role'>): Promise<Anggota | null> {
   // Generate ID menggunakan fungsi fallback
   const id = generateId()
 
   const { data, error } = await supabase
-    .from('anggota')
+    .from('users')
     .insert([{
-      id, // ← kirim ID yang sudah digenerate
+      id,
       nama: anggota.nama,
       email: anggota.email,
       telepon: anggota.telepon,
       alamat: anggota.alamat,
       instansi: anggota.instansi,
-      status_anggota: anggota.status,
+      role: 'member',
+      status: anggota.status,
       tanggal_daftar: new Date().toISOString().split('T')[0]
     }])
     .select()
@@ -77,23 +80,16 @@ export async function addAnggota(anggota: Omit<Anggota, 'id' | 'tanggal_daftar'>
     return null
   }
 
-  // Mapping balik status_anggota → status
-  return {
-    ...data,
-    status: data.status_anggota,
-  }
+  return data
 }
 
 // ─── UPDATE ─────────────────────────────────────────────────
 export async function updateAnggota(id: string, data: Partial<Anggota>): Promise<Anggota | null> {
   const updateData: any = { ...data }
-  if (data.status) {
-    updateData.status_anggota = data.status
-    delete updateData.status
-  }
+  delete updateData.role
 
   const { data: updated, error } = await supabase
-    .from('anggota')
+    .from('users')
     .update(updateData)
     .eq('id', id)
     .select()
@@ -104,16 +100,13 @@ export async function updateAnggota(id: string, data: Partial<Anggota>): Promise
     return null
   }
 
-  return {
-    ...updated,
-    status: updated.status_anggota,
-  }
+  return updated
 }
 
 // ─── DELETE ─────────────────────────────────────────────────
 export async function deleteAnggota(id: string): Promise<boolean> {
   const { error } = await supabase
-    .from('anggota')
+    .from('users')
     .delete()
     .eq('id', id)
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookMarked, Eye, EyeOff, UploadCloud, AlertCircle } from "lucide-react";
+import { BookMarked, Eye, EyeOff, AlertCircle } from "lucide-react";
 import {
   useRegisterAnggota,
   type AnggotaFormData,
@@ -18,7 +18,6 @@ const initialForm: AnggotaFormData = {
   username: "",
   password: "",
   konfirmasiPassword: "",
-  fotoProfil: null,
 };
 
 type FieldErrors = Partial<Record<keyof AnggotaFormData, string>>;
@@ -31,10 +30,7 @@ export default function SignupAnggotaPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [fotoName, setFotoName] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
-
-  const fileRef = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof AnggotaFormData>(
     key: K,
@@ -48,8 +44,6 @@ export default function SignupAnggotaPage() {
     const next: FieldErrors = {};
 
     (Object.keys(form) as (keyof AnggotaFormData)[]).forEach((key) => {
-      if (key === "fotoProfil") return;
-
       if (!String(form[key]).trim()) {
         next[key] = "Field ini wajib diisi";
       }
@@ -81,13 +75,6 @@ export default function SignupAnggotaPage() {
     }
 
     router.push("/login?daftar=berhasil");
-  }
-
-  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null;
-
-    update("fotoProfil", file);
-    setFotoName(file?.name ?? null);
   }
 
   return (
@@ -213,33 +200,6 @@ export default function SignupAnggotaPage() {
                 </button>
               </div>
             </Field>
-          </div>
-
-          <div>
-            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-              Foto Profil
-            </label>
-
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-amber-200 rounded-xl py-6 flex flex-col items-center gap-2 text-gray-500 hover:bg-amber-50/50 transition-colors"
-            >
-              <UploadCloud size={20} className="text-gray-500" />
-
-              <span className="text-[12px] text-center px-4">
-                {fotoName ??
-                  "Klik untuk unggah foto profil (JPG, PNG) — Opsional"}
-              </span>
-            </button>
-
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className="hidden"
-              onChange={handleFotoChange}
-            />
           </div>
 
           {serverMessage && (

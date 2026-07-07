@@ -12,7 +12,6 @@ export type AnggotaFormData = {
   username: string;
   password: string;
   konfirmasiPassword: string;
-  fotoProfil: File | null;
 };
 
 export type RegisterResult =
@@ -41,9 +40,9 @@ export function useRegisterAnggota() {
         };
       }
 
-      // 1. Cek username belum dipakai pendaftar lain
+      // 1. Cek username belum dipakai
       const { data: existingUsername } = await supabase
-        .from("pendaftar_anggota")
+        .from("users")
         .select("id")
         .eq("username", data.username)
         .maybeSingle();
@@ -56,10 +55,16 @@ export function useRegisterAnggota() {
         };
       }
 
-      // 2. Daftarkan akun ke Supabase Auth (email + password)
+      // 2. Daftarkan akun ke Supabase Auth (email + password + role metadata)
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
+        options: {
+          data: {
+            role: "member",
+            nama_lengkap: data.namaLengkap,
+          },
+        },
       });
 
       if (signUpError || !signUpData.user) {
@@ -70,37 +75,17 @@ export function useRegisterAnggota() {
       }
 
       const userId = signUpData.user.id;
-      let fotoProfilUrl: string | null = null;
 
-      // 3. Upload foto profil kalau ada (opsional)
-      if (data.fotoProfil) {
-        const ext = data.fotoProfil.name.split(".").pop();
-        const path = `${userId}/profil.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("foto-profil")
-          .upload(path, data.fotoProfil, { upsert: true });
-
-        if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
-            .from("foto-profil")
-            .getPublicUrl(path);
-          fotoProfilUrl = publicUrlData.publicUrl;
-        }
-      }
-
-      // 4. Simpan ke tabel pendaftar_anggota, status default "menunggu_verifikasi"
-      //    (BUKAN tabel `anggota` - itu khusus anggota yang sudah disetujui admin)
-      const { error: insertError } = await supabase.from("pendaftar_anggota").insert({
+      // 3. Simpan ke tabel users
+      const { error: insertError } = await supabase.from("users").insert({
         id: userId,
-        nama_lengkap: data.namaLengkap,
-        tanggal_lahir: data.tanggalLahir,
-        alamat: data.alamat,
-        no_telepon: data.noTelepon,
+        nama: data.namaLengkap,
         email: data.email,
+        telepon: data.noTelepon,
+        alamat: data.alamat,
         username: data.username,
-        foto_profil_url: fotoProfilUrl,
-        status: "menunggu_verifikasi",
+        role: "member",
+        status: "MENUNGGU",
       });
 
       if (insertError) {

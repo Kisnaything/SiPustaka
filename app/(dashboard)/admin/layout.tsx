@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   BookOpen,
@@ -45,6 +47,11 @@ const NAV_ITEMS: NavItem[] = [
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 function Sidebar({ active, onNav }: { active: Page; onNav: (p: Page) => void }) {
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
   return (
     <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#F9FAFB] border-r border-[#E5E7EB] flex flex-col z-50">
       {/* Logo */}
@@ -94,17 +101,20 @@ function Sidebar({ active, onNav }: { active: Page; onNav: (p: Page) => void }) 
           <User size={18} />
           Profil
         </button>
-        <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold text-[#DC2626] hover:bg-red-50 transition-all">
-          <LogOut size={18} />
-          Keluar
-        </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold text-[#DC2626] hover:bg-red-50 transition-all"
+          >
+            <LogOut size={18} />
+            Keluar
+          </button>
       </div>
     </aside>
   );
 }
 
 // ─── Topbar ──────────────────────────────────────────────────────────────────
-function Topbar({ onNotifClick }: { onNotifClick: () => void }) {
+function Topbar({ onNotifClick, adminName, adminInitials }: { onNotifClick: () => void; adminName: string; adminInitials: string }) {
   return (
     <header className="h-[75px] bg-[#FFF8F4] border-b border-[#E5E7EB] flex items-center px-6 sticky top-0 z-40">
       {/* Search */}
@@ -124,11 +134,11 @@ function Topbar({ onNotifClick }: { onNotifClick: () => void }) {
         </button>
         <div className="flex items-center gap-3 pl-4 border-l border-[#E5E7EB]">
           <div className="text-right">
-            <p className="text-[13px] font-semibold text-[#111827] leading-tight">Admin Utama</p>
+            <p className="text-[13px] font-semibold text-[#111827] leading-tight">{adminName}</p>
             <p className="text-[12px] font-medium text-[#524534]">Super Admin</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-[#F5A623]/20 border border-[#E5E7EB] flex items-center justify-center text-[#835500] font-bold text-sm">
-            AU
+            {adminInitials}
           </div>
         </div>
       </div>
@@ -140,6 +150,35 @@ function Topbar({ onNotifClick }: { onNotifClick: () => void }) {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const [adminName, setAdminName] = useState("Admin");
+  const [adminInitials, setAdminInitials] = useState("AD");
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      const role = user.user_metadata?.role;
+      if (role !== "admin") {
+        router.push("/member");
+        return;
+      }
+      const name = user.user_metadata?.nama_lengkap || "Admin";
+      setAdminName(name);
+      setAdminInitials(
+        name
+          .split(" ")
+          .map((w: string) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2)
+      );
+    }
+    checkAuth();
+  }, [router]);
 
   const getActivePage = (): Page => {
     if (pathname === "/admin") return "dashboard";
@@ -173,7 +212,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-[#FFF8F4]">
       <Sidebar active={getActivePage()} onNav={handleNav} />
       <main className="ml-[240px] min-h-screen flex flex-col">
-        <Topbar onNotifClick={() => router.push("/admin/notifikasi")} />
+        <Topbar onNotifClick={() => router.push("/admin/notifikasi")} adminName={adminName} adminInitials={adminInitials} />
         <div className="flex-1 p-7">{children}</div>
       </main>
     </div>

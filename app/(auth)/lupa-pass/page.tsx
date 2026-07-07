@@ -3,44 +3,29 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import {
   AlertCircle,
   ArrowLeft,
-  ArrowRight,
   BookMarked,
-  Eye,
-  EyeOff,
-  LockKeyhole,
   Mail,
   Send,
   ShieldCheck,
 } from "lucide-react";
 
-type Step = "email" | "reset";
-
 export default function ForgotPasswordPage() {
   const router = useRouter();
 
-  const [step, setStep] = useState<Step>("email");
-
   const [email, setEmail] = useState("");
-  const [passwordBaru, setPasswordBaru] = useState("");
-  const [konfirmasiPassword, setKonfirmasiPassword] = useState("");
-
-  const [showPasswordBaru, setShowPasswordBaru] = useState(false);
-  const [showKonfirmasi, setShowKonfirmasi] = useState(false);
 
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [showInstructionPopup, setShowInstructionPopup] = useState(false);
-  const [showResetSuccessPopup, setShowResetSuccessPopup] = useState(false);
 
-  function handleSendInstruction(e: React.FormEvent) {
+  async function handleSendInstruction(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccessMessage("");
 
     if (!email.trim()) {
       setError("Alamat email wajib diisi");
@@ -49,61 +34,27 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowInstructionPopup(true);
-    }, 700);
+    const { error: resetError } =
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+    setIsLoading(false);
+
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+
+    setShowInstructionPopup(true);
   }
 
-    function handlePopupOk() {
+  function handlePopupOk() {
     setShowInstructionPopup(false);
-    router.push("/reset-password");
-    }
-
-  function handleResetPassword(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSuccessMessage("");
-
-    if (!passwordBaru.trim()) {
-      setError("Password baru wajib diisi");
-      return;
-    }
-
-    if (passwordBaru.length < 8) {
-      setError("Password minimal 8 karakter");
-      return;
-    }
-
-    if (!konfirmasiPassword.trim()) {
-      setError("Konfirmasi password wajib diisi");
-      return;
-    }
-
-    if (passwordBaru !== konfirmasiPassword) {
-      setError("Konfirmasi password tidak sama");
-      return;
-    }
-
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowResetSuccessPopup(true);
-    }, 700);
+    router.push("/login");
   }
 
-  function getPasswordStrength() {
-    let score = 0;
 
-    if (passwordBaru.length >= 8) score++;
-    if (/[A-Z]/.test(passwordBaru) || /[0-9]/.test(passwordBaru)) score++;
-    if (/[^A-Za-z0-9]/.test(passwordBaru)) score++;
-
-    return score;
-  }
-
-  const strength = getPasswordStrength();
 
   return (
     <main className="min-h-screen bg-[#FAFAF9] flex flex-col items-center justify-center px-4 py-8">
@@ -117,230 +68,85 @@ export default function ForgotPasswordPage() {
         </h1>
       </div>
 
-      {step === "email" ? (
-        <section className="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-8 sm:px-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Lupa Password
-            </h2>
+      <section className="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-8 sm:px-8 space-y-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Lupa Password
+          </h2>
 
-            <p className="text-[13px] leading-relaxed text-gray-500">
-              Masukkan email Anda untuk menerima instruksi reset password
-            </p>
-          </div>
+          <p className="text-[13px] leading-relaxed text-gray-500">
+            Masukkan email Anda untuk menerima instruksi reset password
+          </p>
+        </div>
 
-          <form onSubmit={handleSendInstruction} className="space-y-5">
-            <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-                Alamat Email
-              </label>
+        <form onSubmit={handleSendInstruction} className="space-y-5">
+          <div>
+            <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              Alamat Email
+            </label>
 
-              <div className="relative">
-                <Mail
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+            <div className="relative">
+              <Mail
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
 
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError("");
-                  }}
-                  placeholder="nama@email.com"
-                  className={inputClass(!!error) + " pl-12"}
-                />
-              </div>
-
-              {error && (
-                <p className="flex items-center gap-1 text-[11px] text-red-500 mt-1.5">
-                  <AlertCircle size={12} />
-                  {error}
-                </p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center justify-center gap-2"
-            >
-              {isLoading ? "Mengirim..." : "Kirim Instruksi"}
-              {!isLoading && <Send size={17} />}
-            </button>
-          </form>
-
-          <div className="border-t border-gray-100 pt-5">
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-2 text-[13px] text-amber-700 hover:text-amber-800 font-medium"
-            >
-              <ArrowLeft size={16} />
-              Kembali ke Login
-            </Link>
-          </div>
-        </section>
-      ) : (
-        <section className="w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-8 sm:px-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Atur Ulang Password
-            </h2>
-
-            <p className="text-[13px] leading-relaxed text-gray-500">
-              Buat password baru untuk mengamankan akun Anda
-            </p>
-          </div>
-
-          <form onSubmit={handleResetPassword} className="space-y-5">
-            <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-                Password baru
-              </label>
-
-              <div className="relative">
-                <LockKeyhole
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-
-                <input
-                  type={showPasswordBaru ? "text" : "password"}
-                  value={passwordBaru}
-                  onChange={(e) => {
-                    setPasswordBaru(e.target.value);
-                    setError("");
-                  }}
-                  placeholder="Min. 8 karakter"
-                  className={inputClass(false) + " pl-12 pr-12"}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordBaru((prev) => !prev)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Tampilkan atau sembunyikan password baru"
-                >
-                  {showPasswordBaru ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-
-              <div className="mt-3 grid grid-cols-3 gap-1">
-                <div
-                  className={`h-1 rounded-full ${
-                    strength >= 1 ? "bg-amber-400" : "bg-gray-100"
-                  }`}
-                />
-                <div
-                  className={`h-1 rounded-full ${
-                    strength >= 2 ? "bg-amber-400" : "bg-gray-100"
-                  }`}
-                />
-                <div
-                  className={`h-1 rounded-full ${
-                    strength >= 3 ? "bg-amber-400" : "bg-gray-100"
-                  }`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-                Konfirmasi password
-              </label>
-
-              <div className="relative">
-                <ShieldCheck
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-
-                <input
-                  type={showKonfirmasi ? "text" : "password"}
-                  value={konfirmasiPassword}
-                  onChange={(e) => {
-                    setKonfirmasiPassword(e.target.value);
-                    setError("");
-                  }}
-                  placeholder="Ulangi password baru"
-                  className={inputClass(false) + " pl-12 pr-12"}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowKonfirmasi((prev) => !prev)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Tampilkan atau sembunyikan konfirmasi password"
-                >
-                  {showKonfirmasi ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                placeholder="nama@email.com"
+                className={inputClass(!!error) + " pl-12"}
+              />
             </div>
 
             {error && (
-              <p className="flex items-center gap-1.5 text-[12px] text-red-500">
-                <AlertCircle size={13} />
+              <p className="flex items-center gap-1 text-[11px] text-red-500 mt-1.5">
+                <AlertCircle size={12} />
                 {error}
               </p>
             )}
-
-            {successMessage && (
-              <p className="text-[12px] text-green-600">
-                {successMessage}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center justify-center gap-2"
-            >
-              {isLoading ? "Menyimpan..." : "Simpan Password"}
-              {!isLoading && <ArrowRight size={18} />}
-            </button>
-          </form>
-
-          <div className="border-t border-gray-100 pt-5">
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-2 text-[13px] text-amber-700 hover:text-amber-800 font-medium"
-            >
-              <ArrowLeft size={16} />
-              Kembali ke Login
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {step === "email" && (
-        <>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-5 py-2 text-[12px] text-amber-700">
-            <ShieldCheck size={15} />
-            Sistem Keamanan Terenkripsi
           </div>
 
-          <p className="mt-4 text-center text-[12px] text-gray-400">
-            © 2024 SiPustaka. Kelola literasi dengan hati.
-          </p>
-        </>
-      )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center justify-center gap-2"
+          >
+            {isLoading ? "Mengirim..." : "Kirim Instruksi"}
+            {!isLoading && <Send size={17} />}
+          </button>
+        </form>
+
+        <div className="border-t border-gray-100 pt-5">
+          <Link
+            href="/login"
+            className="flex items-center justify-center gap-2 text-[13px] text-amber-700 hover:text-amber-800 font-medium"
+          >
+            <ArrowLeft size={16} />
+            Kembali ke Login
+          </Link>
+        </div>
+      </section>
+
+      <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-5 py-2 text-[12px] text-amber-700">
+        <ShieldCheck size={15} />
+        Sistem Keamanan Terenkripsi
+      </div>
+
+      <p className="mt-4 text-center text-[12px] text-gray-400">
+        © 2024 SiPustaka. Kelola literasi dengan hati.
+      </p>
 
       {showInstructionPopup && (
         <Popup
           title="Instruksi berhasil dikirim"
-          description="Silakan klik OK untuk melanjutkan ke halaman atur ulang password."
+          description="Silakan periksa email Anda untuk melanjutkan proses reset password."
           buttonText="OK"
           onClick={handlePopupOk}
-        />
-      )}
-
-      {showResetSuccessPopup && (
-        <Popup
-          title="Password berhasil disimpan"
-          description="Password baru sudah dibuat. Silakan masuk menggunakan password terbaru."
-          buttonText="Masuk ke Login"
-          onClick={() => router.push("/login")}
         />
       )}
     </main>

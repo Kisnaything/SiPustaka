@@ -47,12 +47,8 @@ export default function DashboardPage() {
 
   // ─── HOOKS (dipanggil di level atas) ──────────────────
   const { books: bukuList, loading: loadingBuku } = useBuku();
-  const anggotaData = useAnggota(); // ← LANGSUNG ARRAY
-  const peminjamanData = usePeminjaman(); // ← LANGSUNG ARRAY
-
-  // ─── Ambil data dengan fallback ────────────────────────
-  const anggotaList = Array.isArray(anggotaData) ? anggotaData : [];
-  const peminjamanList = Array.isArray(peminjamanData) ? peminjamanData : [];
+  const { anggota: anggotaList } = useAnggota();
+  const peminjamanList = usePeminjaman();
 
   const [now] = useState(() => Date.now());
   const [year, setYear] = useState('Tahun ' + new Date().getFullYear());

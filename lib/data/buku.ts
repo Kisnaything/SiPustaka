@@ -1,6 +1,3 @@
-// lib/data/buku.ts
-import { supabase } from '@/lib/supabase/client'
-
 export interface Buku {
   id: string
   judul: string
@@ -16,81 +13,93 @@ export interface Buku {
   sinopsis: string
 }
 
-// ─── GET ALL ────────────────────────────────────────────────
-export async function getBooks(): Promise<Buku[]> {
-  const { data, error } = await supabase
-    .from('buku')
-    .select('*')
-    .order('created_at', { ascending: false })
+async function api<T>(body: Record<string, unknown>): Promise<T> {
+  const res = await fetch('/api/data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) {
+    console.error('API error:', json.error)
+    throw new Error(json.error)
+  }
+  return json.data as T
+}
 
-  if (error) {
-    console.error('Supabase error (getBooks):', error.message)
-    console.error('Full error:', JSON.stringify(error, null, 2))
+export async function getBooks(): Promise<Buku[]> {
+  try {
+    return await api<Buku[]>({
+      table: 'buku',
+      operation: 'select',
+      params: {
+        select: '*',
+        order: { column: 'created_at', ascending: false },
+      },
+    })
+  } catch {
     return []
   }
-  return data || []
 }
 
-// ─── GET BY ID ──────────────────────────────────────────────
 export async function getBookById(id: string): Promise<Buku | null> {
-  const { data, error } = await supabase
-    .from('buku')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    console.error('Supabase error (getBookById):', error.message)
-    console.error('Full error:', JSON.stringify(error, null, 2))
+  try {
+    return await api<Buku>({
+      table: 'buku',
+      operation: 'select',
+      params: {
+        select: '*',
+        eq: { column: 'id', value: id },
+        single: true,
+      },
+    })
+  } catch {
     return null
   }
-  return data
 }
 
-// ─── ADD ────────────────────────────────────────────────────
 export async function addBook(book: Omit<Buku, 'id'>): Promise<Buku | null> {
-  const { data, error } = await supabase
-    .from('buku')
-    .insert([book])
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Supabase error (addBook):', error.message)
-    console.error('Full error:', JSON.stringify(error, null, 2))
+  try {
+    return await api<Buku>({
+      table: 'buku',
+      operation: 'insert',
+      params: {
+        values: book,
+        select: true,
+        single: true,
+      },
+    })
+  } catch {
     return null
   }
-  return data
 }
 
-// ─── UPDATE ─────────────────────────────────────────────────
 export async function updateBook(id: string, data: Partial<Buku>): Promise<Buku | null> {
-  const { data: updated, error } = await supabase
-    .from('buku')
-    .update(data)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Supabase error (updateBook):', error.message)
-    console.error('Full error:', JSON.stringify(error, null, 2))
+  try {
+    return await api<Buku>({
+      table: 'buku',
+      operation: 'update',
+      params: {
+        values: data,
+        eq: { column: 'id', value: id },
+        select: true,
+        single: true,
+      },
+    })
+  } catch {
     return null
   }
-  return updated
 }
 
-// ─── DELETE ─────────────────────────────────────────────────
 export async function deleteBook(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('buku')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('Supabase error (deleteBook):', error.message)
-    console.error('Full error:', JSON.stringify(error, null, 2))
+  try {
+    await api<null>({
+      table: 'buku',
+      operation: 'delete',
+      params: { eq: { column: 'id', value: id } },
+    })
+    return true
+  } catch {
     return false
   }
-  return true
 }

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
 import {
   AlertCircle,
   BookMarked,
@@ -61,44 +60,24 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email, password: form.password }),
       });
 
-      if (error) {
-        const msg = error.message?.toLowerCase() || "";
+      const result = await res.json();
 
-        if (msg.includes("email not confirmed")) {
-          setServerMessage(
-            "Email belum dikonfirmasi. Silakan cek email Anda untuk tautan konfirmasi, atau hubungi admin."
-          );
-        } else if (msg.includes("invalid login credentials")) {
-          setServerMessage("Email atau password salah.");
-        } else if (msg.includes("user is banned")) {
-          setServerMessage("Akun Anda telah dinonaktifkan.");
-        } else if (msg.includes("rate limit")) {
-          setServerMessage("Terlalu banyak percobaan login. Silakan coba lagi nanti.");
-        } else {
-          setServerMessage(error.message);
-        }
+      if (!result.success) {
+        setServerMessage(result.message);
         return;
       }
 
-      const role = data.user?.user_metadata?.role;
-
-      await supabase.auth.getSession();
-
-      if (role === "admin") {
-        router.push("/admin");
-      } else if (role === "member") {
-        router.push("/member");
-      } else {
-        await supabase.auth.signOut();
-        setServerMessage("Akun tidak memiliki role yang valid.");
+      if (result.redirect) {
+        router.push(result.redirect);
       }
     } catch {
-      setServerMessage("Terjadi kesalahan. Silakan coba lagi.");
+      setServerMessage("Gagal terhubung ke server. Periksa koneksi internet Anda.");
     } finally {
       setIsLoading(false);
     }

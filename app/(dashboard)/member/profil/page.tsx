@@ -1,21 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
-const dataDummy = {
-  namaLengkap: 'Sinta Maharani',
-  nomorAnggota: 'A-20240041',
-  alamat: 'Jl. Dharmawangsa No. 12, Surabaya',
-  noTelepon: '0857-9012-3456',
-  email: 'sinta.m@student.unair.ac.id',
-  username: 'sinta.maharani',
-  status: 'Aktif',
-  tanggalDaftar: '3 Maret 2024',
-  totalBukuDipinjam: 24,
-  totalPeminjaman: 19,
-  totalDendaDibayar: 45000,
-}
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
 
 function getInisial(nama: string) {
   const parts = nama.trim().split(' ')
@@ -23,33 +11,100 @@ function getInisial(nama: string) {
   return (parts[0][0] + parts[1][0]).toUpperCase()
 }
 
+function formatTanggal(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function nomorAnggota(id: string) {
+  return 'M-' + id.slice(0, 8).toUpperCase()
+}
+
 export default function ProfilPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [form, setForm] = useState({
-    namaLengkap: dataDummy.namaLengkap,
-    alamat: dataDummy.alamat,
-    noTelepon: dataDummy.noTelepon,
-    email: dataDummy.email,
+    namaLengkap: '',
+    alamat: '',
+    noTelepon: '',
+    email: '',
+    username: '',
   })
   const [formTemp, setFormTemp] = useState(form)
+  const [metadata, setMetadata] = useState({
+    id: '',
+    nomorAnggota: '',
+    tanggalDaftar: '',
+    status: 'Aktif',
+  })
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const meta = user.user_metadata || {}
+      const nama = meta.nama_lengkap || ''
+      const alamat = meta.alamat || ''
+      const telepon = meta.telepon || ''
+      const username = meta.username || ''
+
+      setForm({ namaLengkap: nama, alamat, noTelepon: telepon, email: user.email || '', username })
+      setFormTemp({ namaLengkap: nama, alamat, noTelepon: telepon, email: user.email || '', username })
+      setMetadata({
+        id: user.id,
+        nomorAnggota: nomorAnggota(user.id),
+        tanggalDaftar: user.created_at ? formatTanggal(user.created_at) : '',
+        status: 'Aktif',
+      })
+      setLoading(false)
+    }
+    load()
+  }, [])
 
   const handleEdit = () => {
-    setFormTemp(form) // simpan state sebelum edit, untuk cancel
+    setFormTemp(form)
     setIsEditing(true)
   }
 
-  const handleSimpan = () => {
+  const handleSimpan = async () => {
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        nama_lengkap: formTemp.namaLengkap,
+        alamat: formTemp.alamat,
+        telepon: formTemp.noTelepon,
+      },
+    })
+
+    if (error) {
+      alert('Gagal menyimpan: ' + error.message)
+      return
+    }
+
     setForm(formTemp)
     setIsEditing(false)
-    // nanti diganti dengan update ke Supabase
   }
 
   const handleBatal = () => {
-    setFormTemp(form) // kembalikan ke sebelum edit
+    setFormTemp(form)
     setIsEditing(false)
   }
 
-  const inisial = getInisial(form.namaLengkap)
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  if (loading) {
+    return (
+      <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        Memuat profil...
+      </div>
+    )
+  }
+
+  const inisial = getInisial(form.namaLengkap || 'A')
 
   return (
     <div style={{
@@ -78,19 +133,19 @@ export default function ProfilPage() {
             {form.namaLengkap}
           </span>
           <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 400 }}>
-            {dataDummy.nomorAnggota}
+            {metadata.nomorAnggota}
           </span>
           <span style={{
             backgroundColor: '#DCFCE7', color: '#15803D',
             borderRadius: '999px', padding: '3px 10px',
             fontSize: '12px', fontWeight: 500,
           }}>
-            {dataDummy.status}
+            {metadata.status}
           </span>
         </div>
 
         <p style={{ fontSize: '13px', color: '#9CA3AF', margin: 0 }}>
-          Anggota sejak {dataDummy.tanggalDaftar}
+          Anggota sejak {metadata.tanggalDaftar}
         </p>
       </div>
 
@@ -102,9 +157,9 @@ export default function ProfilPage() {
         marginBottom: '28px',
       }}>
         {[
-          { label: 'TOTAL BUKU DIPINJAM', value: dataDummy.totalBukuDipinjam },
-          { label: 'TOTAL PEMINJAMAN', value: dataDummy.totalPeminjaman },
-          { label: 'TOTAL DENDA DIBAYAR', value: `Rp ${dataDummy.totalDendaDibayar.toLocaleString('id-ID')}` },
+          { label: 'TOTAL BUKU DIPINJAM', value: 0 },
+          { label: 'TOTAL PEMINJAMAN', value: 0 },
+          { label: 'TOTAL DENDA DIBAYAR', value: 'Rp 0' },
         ].map((stat) => (
           <div key={stat.label} style={{
             border: '1px solid #E5E7EB',
@@ -182,7 +237,6 @@ export default function ProfilPage() {
 
         {/* Fields */}
         <div style={{ padding: '4px 0' }}>
-          {/* Nama Lengkap */}
           <FieldItem
             label="Nama Lengkap"
             value={formTemp.namaLengkap}
@@ -190,15 +244,13 @@ export default function ProfilPage() {
             onChange={(val) => setFormTemp({ ...formTemp, namaLengkap: val })}
           />
 
-          {/* Nomor Anggota — tidak bisa diedit */}
           <FieldItem
             label="Nomor Anggota"
-            value={dataDummy.nomorAnggota}
+            value={metadata.nomorAnggota}
             isEditing={false}
             disabled
           />
 
-          {/* Alamat */}
           <FieldItem
             label="Alamat"
             value={formTemp.alamat}
@@ -206,7 +258,6 @@ export default function ProfilPage() {
             onChange={(val) => setFormTemp({ ...formTemp, alamat: val })}
           />
 
-          {/* No. Telepon */}
           <FieldItem
             label="No. Telepon"
             value={formTemp.noTelepon}
@@ -214,7 +265,6 @@ export default function ProfilPage() {
             onChange={(val) => setFormTemp({ ...formTemp, noTelepon: val })}
           />
 
-          {/* Email */}
           <FieldItem
             label="Email"
             value={formTemp.email}
@@ -236,13 +286,12 @@ export default function ProfilPage() {
         </div>
 
         <div style={{ padding: '0 20px 20px' }}>
-          {/* Username */}
           <div style={{ marginTop: '16px' }}>
             <label style={{ fontSize: '13px', color: '#9CA3AF', fontWeight: 500, display: 'block', marginBottom: '6px' }}>
               Username
             </label>
             <input
-              value={dataDummy.username}
+              value={form.username}
               disabled
               style={{
                 width: '100%',
@@ -259,7 +308,6 @@ export default function ProfilPage() {
             />
           </div>
 
-          {/* Password */}
           <div style={{ marginTop: '16px' }}>
             <label style={{ fontSize: '13px', color: '#9CA3AF', fontWeight: 500, display: 'block', marginBottom: '6px' }}>
               Password
@@ -302,10 +350,7 @@ export default function ProfilPage() {
       {/* Tombol Keluar */}
       <div style={{ textAlign: 'center', marginTop: '24px' }}>
         <button
-          onClick={() => {
-            // nanti diganti dengan Supabase signOut
-            alert('Logout berhasil')
-          }}
+          onClick={handleLogout}
           style={{
             padding: '10px 32px',
             backgroundColor: 'transparent',
@@ -340,7 +385,6 @@ export default function ProfilPage() {
   )
 }
 
-// Komponen field reusable
 function FieldItem({
   label,
   value,

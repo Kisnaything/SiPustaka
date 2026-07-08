@@ -11,9 +11,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { namaLengkap, email, password, username, noTelepon, alamat } = body;
+    const { namaLengkap, email, password, username, noTelepon, kodeAkses } = body;
 
-    if (!namaLengkap || !email || !password || !username || !noTelepon || !alamat) {
+    if (!namaLengkap || !email || !password || !username || !noTelepon || !kodeAkses) {
       return Response.json(
         { success: false, message: "Semua field wajib diisi" },
         { status: 400 }
@@ -24,6 +24,13 @@ export async function POST(request: Request) {
       return Response.json(
         { success: false, message: "Password minimal 8 karakter", field: "password" },
         { status: 400 }
+      );
+    }
+
+    if (kodeAkses !== process.env.ADMIN_ACCESS_CODE) {
+      return Response.json(
+        { success: false, message: "Kode akses tidak valid.", field: "kodeAkses" },
+        { status: 403 }
       );
     }
 
@@ -55,11 +62,10 @@ export async function POST(request: Request) {
         password,
         email_confirm: true,
         user_metadata: {
-          role: "member",
+          role: "admin",
           nama_lengkap: namaLengkap,
           username,
           telepon: noTelepon,
-          alamat,
         },
       }),
     });
@@ -70,7 +76,15 @@ export async function POST(request: Request) {
       let msg = "Gagal mendaftarkan akun.";
       try {
         const errData = JSON.parse(bodyText);
-        msg = errData.message || errData.msg || errData.error || msg;
+        if (errData.msg?.includes?.("Database error")) {
+          if (errData.error_id) {
+            msg = "Terjadi kesalahan pada server autentikasi. Silakan coba lagi atau hubungi administrator.";
+          } else {
+            msg = errData.msg;
+          }
+        } else {
+          msg = errData.message || errData.msg || errData.error || msg;
+        }
       } catch {
         if (bodyText) msg = bodyText.slice(0, 200);
       }
@@ -79,10 +93,8 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true });
   } catch (err) {
-    console.error("Register error:", err);
-    return Response.json(
-      { success: false, message: err instanceof Error ? err.message : "Terjadi kesalahan" },
-      { status: 500 }
-    );
+    console.error("Register-admin error:", err);
+    const message = err instanceof Error ? err.message : "Terjadi kesalahan";
+    return Response.json({ success: false, message }, { status: 500 });
   }
 }

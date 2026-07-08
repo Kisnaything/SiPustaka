@@ -1,37 +1,11 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase/client'
 
-// Data dummy — nanti diganti data asli dari Supabase
-const dataDummy = {
-  nama: 'Sinta Maharani',
-  nomorAnggota: 'A-20240041',
-  bukuDipinjam: 2,
-  jatuhTempoTerdekat: {
-    tanggal: '26 Jun 2026',
-    judul: 'Pemrograman Web Modern',
-  },
-  dendaAktif: 0,
-  peminjaman: [
-    {
-      id: '1',
-      judul: 'Pemrograman Web Modern',
-      jenis: 'Buku Fisik',
-      cover: null,
-      tanggalPinjam: '12 Jun 2026',
-      jatuhTempo: '26 Jun 2026',
-      status: 'Aktif',
-    },
-    {
-      id: '2',
-      judul: 'Basis Data Lanjutan',
-      jenis: 'E-Book',
-      cover: null,
-      tanggalPinjam: '10 Jun 2026',
-      jatuhTempo: '24 Jun 2026',
-      status: 'Menunggu Verifikasi',
-    },
-  ],
+function buatNomorAnggota(id: string) {
+  return 'M-' + id.slice(0, 8).toUpperCase()
 }
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
@@ -71,7 +45,37 @@ function getTanggalHariIni() {
 }
 
 export default function DashboardPage() {
-  const { nama, nomorAnggota, bukuDipinjam, jatuhTempoTerdekat, dendaAktif, peminjaman } = dataDummy
+  const [nama, setNama] = useState('Anggota')
+  const [nomorAnggota, setNomorAnggota] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setNama(user.user_metadata?.nama_lengkap || 'Anggota')
+        setNomorAnggota(buatNomorAnggota(user.id))
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const bukuDipinjam = 2
+  const jatuhTempoTerdekat = { tanggal: '26 Jun 2026', judul: 'Pemrograman Web Modern' }
+  const dendaAktif = 0
+  const peminjaman = [
+    { id: '1', judul: 'Pemrograman Web Modern', jenis: 'Buku Fisik', cover: null, tanggalPinjam: '12 Jun 2026', jatuhTempo: '26 Jun 2026', status: 'Aktif' },
+    { id: '2', judul: 'Basis Data Lanjutan', jenis: 'E-Book', cover: null, tanggalPinjam: '10 Jun 2026', jatuhTempo: '24 Jun 2026', status: 'Menunggu Verifikasi' },
+  ]
+
+  if (loading) {
+    return (
+      <div style={{ padding: '24px 32px', fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#9CA3AF' }}>
+        Memuat...
+      </div>
+    )
+  }
 
   return (
     <div style={{

@@ -54,8 +54,9 @@ export function useRegisterAnggota() {
       });
 
       const result = await res.json();
+      console.log("Register API response:", result);
       if (!res.ok) {
-        return { success: false, message: result.message, field: result.field };
+        return { success: false, message: result.message || "Terjadi kesalahan pada server", field: result.field };
       }
 
       return { success: true };

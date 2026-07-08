@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
@@ -16,6 +16,7 @@ import {
   LogIn,
   AlertCircle,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 import { useBuku } from '@/lib/hooks/useBuku';
 import { useAnggota } from '@/lib/hooks/useAnggota';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
@@ -33,6 +34,17 @@ function formatDate(dateStr: string) {
 }
 
 export default function DashboardPage() {
+  // ─── Ambil nama admin ────────────────────────────────
+  const [adminName, setAdminName] = useState('Admin');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.nama_lengkap) {
+        setAdminName(user.user_metadata.nama_lengkap);
+      }
+    });
+  }, []);
+
   // ─── HOOKS (dipanggil di level atas) ──────────────────
   const { books: bukuList, loading: loadingBuku } = useBuku();
   const anggotaData = useAnggota(); // ← LANGSUNG ARRAY
@@ -217,7 +229,7 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-[28px] font-bold text-[#111827]">
-            Selamat Datang Kembali, Admin!
+            Selamat Datang Kembali, {adminName}!
           </h1>
           <p className="text-[14px] font-medium text-[#585F6C] mt-1">
             Berikut adalah ringkasan performa perpustakaan SiPustaka hari ini.

@@ -67,11 +67,27 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setServerMessage("Email atau password salah.");
+        const msg = error.message?.toLowerCase() || "";
+
+        if (msg.includes("email not confirmed")) {
+          setServerMessage(
+            "Email belum dikonfirmasi. Silakan cek email Anda untuk tautan konfirmasi, atau hubungi admin."
+          );
+        } else if (msg.includes("invalid login credentials")) {
+          setServerMessage("Email atau password salah.");
+        } else if (msg.includes("user is banned")) {
+          setServerMessage("Akun Anda telah dinonaktifkan.");
+        } else if (msg.includes("rate limit")) {
+          setServerMessage("Terlalu banyak percobaan login. Silakan coba lagi nanti.");
+        } else {
+          setServerMessage(error.message);
+        }
         return;
       }
 
       const role = data.user?.user_metadata?.role;
+
+      await supabase.auth.getSession();
 
       if (role === "admin") {
         router.push("/admin");

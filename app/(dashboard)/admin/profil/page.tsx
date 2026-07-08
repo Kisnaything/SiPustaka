@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   User,
   Mail,
@@ -16,41 +17,100 @@ import {
   EyeOff,
   X,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+
+function getInisial(nama: string) {
+  const parts = nama.trim().split(' ')
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
 
 export default function ProfilPage() {
-  // ─── State ───
-  const [nama, setNama] = useState('Admin Pustaka');
-  const [email, setEmail] = useState('admin@sipustaka.ac.id');
-  const [telepon, setTelepon] = useState('0811-2345-6789');
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+
+  const [nama, setNama] = useState('');
+  const [email, setEmail] = useState('');
+  const [telepon, setTelepon] = useState('');
+  const [username, setUsername] = useState('');
+
   const [namaPerpustakaan, setNamaPerpustakaan] = useState('Perpustakaan Umum Daerah SiPustaka');
   const [dendaPerHari, setDendaPerHari] = useState(2000);
   const [durasiPinjam, setDurasiPinjam] = useState(5);
 
-  // ─── Modal Ubah Password ───
   const [modalPassword, setModalPassword] = useState(false);
   const [passwordLama, setPasswordLama] = useState('');
   const [passwordBaru, setPasswordBaru] = useState('');
   const [passwordUlangi, setPasswordUlangi] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSimpanProfil = () => alert('✅ Data profil berhasil disimpan!');
-  const handleSimpanKonfigurasi = () => alert('✅ Konfigurasi disimpan!');
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-  const handleUbahPassword = () => {
+      const meta = user.user_metadata || {}
+      setNama(meta.nama_lengkap || '')
+      setEmail(user.email || '')
+      setTelepon(meta.telepon || '')
+      setUsername(meta.username || '')
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const handleSimpanProfil = async () => {
+    const { error } = await supabase.auth.updateUser({
+      data: { nama_lengkap: nama, telepon },
+    })
+    if (error) {
+      alert('Gagal menyimpan: ' + error.message)
+      return
+    }
+    alert('Profil berhasil disimpan!')
+  }
+
+  const handleSimpanKonfigurasi = () => {
+    alert('Konfigurasi disimpan! (nanti diintegrasikan ke database)')
+  }
+
+  const handleUbahPassword = async () => {
     if (passwordBaru !== passwordUlangi) {
-      alert('❌ Password baru dan ulangan tidak cocok!');
-      return;
+      alert('Password baru dan ulangan tidak cocok!')
+      return
     }
     if (passwordBaru.length < 6) {
-      alert('❌ Password minimal 6 karakter!');
-      return;
+      alert('Password minimal 6 karakter!')
+      return
     }
-    alert('✅ Password berhasil diubah!');
-    setModalPassword(false);
-    setPasswordLama('');
-    setPasswordBaru('');
-    setPasswordUlangi('');
-  };
+
+    const { error } = await supabase.auth.updateUser({ password: passwordBaru })
+    if (error) {
+      alert('Gagal mengubah password: ' + error.message)
+      return
+    }
+
+    alert('Password berhasil diubah!')
+    setModalPassword(false)
+    setPasswordLama('')
+    setPasswordBaru('')
+    setPasswordUlangi('')
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40 text-[14px] text-[#9CA3AF]">
+        Memuat profil...
+      </div>
+    )
+  }
+
+  const inisial = getInisial(nama || 'A')
 
   return (
     <div>
@@ -71,7 +131,7 @@ export default function ProfilPage() {
             <div className="flex items-center gap-4 pb-4 border-b border-[#F3F4F6]">
               <div className="relative">
                 <div className="w-16 h-16 rounded-full bg-[#FEF3DC] flex items-center justify-center text-[#B45309] text-xl font-bold">
-                  AU
+                  {inisial}
                 </div>
                 <button className="absolute -bottom-1 -right-1 p-1 bg-white rounded-full border border-[#E5E7EB] hover:bg-[#F9FAFB]">
                   <Camera size={14} className="text-[#585F6C]" />
@@ -190,7 +250,7 @@ export default function ProfilPage() {
               <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
                 <div>
                   <p className="text-[14px] font-semibold text-[#111827]">Ubah Kata Sandi</p>
-                  <p className="text-[12px] text-[#9CA3AF]">Terakhir diubah 3 bulan lalu</p>
+                  <p className="text-[12px] text-[#9CA3AF]">Update password akun admin</p>
                 </div>
                 <button
                   onClick={() => setModalPassword(true)}
@@ -200,26 +260,18 @@ export default function ProfilPage() {
                 </button>
               </div>
 
-              {/* 2FA — Coming Soon */}
-              <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg opacity-60">
+              {/* Logout */}
+              <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
                 <div>
-                  <p className="text-[14px] font-semibold text-[#111827]">Autentikasi 2 Faktor</p>
-                  <p className="text-[12px] text-[#9CA3AF]">Coming Soon</p>
+                  <p className="text-[14px] font-semibold text-[#111827]">Keluar</p>
+                  <p className="text-[12px] text-[#9CA3AF]">Akhiri sesi login</p>
                 </div>
-                <span className="text-[12px] text-[#9CA3AF] bg-[#F3F4F6] px-2.5 py-0.5 rounded-full">
-                  Dalam Pengembangan
-                </span>
-              </div>
-
-              {/* Log Aktivitas — Coming Soon */}
-              <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg opacity-60">
-                <div>
-                  <p className="text-[14px] font-semibold text-[#111827]">Log Aktivitas</p>
-                  <p className="text-[12px] text-[#9CA3AF]">Coming Soon</p>
-                </div>
-                <span className="text-[12px] text-[#9CA3AF] bg-[#F3F4F6] px-2.5 py-0.5 rounded-full">
-                  Dalam Pengembangan
-                </span>
+                <button
+                  onClick={handleLogout}
+                  className="text-[13px] font-semibold text-[#DC2626] hover:underline"
+                >
+                  Keluar
+                </button>
               </div>
             </div>
           </div>
@@ -236,13 +288,12 @@ export default function ProfilPage() {
           {/* Danger Zone */}
           <div className="bg-white rounded-xl border border-[#FEE2E2] p-6">
             <h2 className="text-[15px] font-bold text-[#DC2626] mb-4">Zona Bahaya</h2>
-            <button className="w-full flex items-center justify-center gap-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors"
+            >
               <LogOut size={16} />
-              Reset Data Sistem
-            </button>
-            <button className="w-full flex items-center justify-center gap-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors mt-2">
-              <LogOut size={16} />
-              Hapus Akun Admin
+              Keluar
             </button>
           </div>
         </div>
@@ -266,25 +317,7 @@ export default function ProfilPage() {
               <div>
                 <label className="text-[13px] font-semibold text-[#374151]">Username</label>
                 <div className="mt-1.5 text-[14px] text-[#9CA3AF] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5">
-                  adminpustaka
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[13px] font-semibold text-[#374151]">Password Lama</label>
-                <div className="relative mt-1.5">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={passwordLama}
-                    onChange={(e) => setPasswordLama(e.target.value)}
-                    className="w-full text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30 pr-10"
-                  />
-                  <button
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  {username}
                 </div>
               </div>
 
@@ -307,7 +340,7 @@ export default function ProfilPage() {
                   className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
                 />
                 {passwordBaru && passwordUlangi && passwordBaru !== passwordUlangi && (
-                  <p className="text-[12px] text-[#DC2626] mt-1">❌ Password tidak cocok, periksa kembali</p>
+                  <p className="text-[12px] text-[#DC2626] mt-1">Password tidak cocok, periksa kembali</p>
                 )}
               </div>
             </div>
@@ -318,9 +351,9 @@ export default function ProfilPage() {
               </button>
               <button
                 onClick={handleUbahPassword}
-                disabled={!passwordLama || !passwordBaru || !passwordUlangi || passwordBaru !== passwordUlangi || passwordBaru.length < 6}
+                disabled={!passwordBaru || !passwordUlangi || passwordBaru !== passwordUlangi || passwordBaru.length < 6}
                 className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shadow-sm ${
-                  !passwordLama || !passwordBaru || !passwordUlangi || passwordBaru !== passwordUlangi || passwordBaru.length < 6
+                  !passwordBaru || !passwordUlangi || passwordBaru !== passwordUlangi || passwordBaru.length < 6
                     ? 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
                     : 'bg-[#B45309] hover:bg-[#92400E] text-white'
                 }`}

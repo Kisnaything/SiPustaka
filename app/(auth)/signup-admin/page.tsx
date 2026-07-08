@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
 import { BookMarked, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 type AdminFormData = {
@@ -26,7 +25,7 @@ const initialForm: AdminFormData = {
   kodeAkses: "",
 };
 
-const ADMIN_ACCESS_CODE = "ADMIN123";
+const ADMIN_ACCESS_CODE = process.env.NEXT_PUBLIC_ADMIN_ACCESS_CODE || "ADMIN123";
 
 export default function SignupAdminPage() {
   const router = useRouter();
@@ -92,47 +91,34 @@ export default function SignupAdminPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            role: "admin",
-            nama_lengkap: form.namaLengkap,
-          },
-        },
+      const res = await fetch("/api/register-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          namaLengkap: form.namaLengkap,
+          email: form.email,
+          password: form.password,
+          username: form.username,
+          noTelepon: form.noTelepon,
+          kodeAkses: form.kodeAkses,
+        }),
       });
 
-      if (error) {
-        setServerMessage(error.message);
+      const result = await res.json();
+
+      if (!res.ok) {
+        const msg = (result.message as string) || "Terjadi kesalahan pada server.";
+        setServerMessage(msg);
+        if (result.field) {
+          setErrors((prev) => ({ ...prev, [result.field as string]: msg }));
+        }
         return;
       }
 
-      if (!data.user) {
-        setServerMessage("Gagal mendaftarkan admin. Silakan coba lagi.");
-        return;
-      }
-
-      const { error: insertError } = await supabase.from("users").insert({
-        id: data.user.id,
-        nama: form.namaLengkap,
-        email: form.email,
-        telepon: form.noTelepon,
-        username: form.username,
-        role: "admin",
-        status: "AKTIF",
-      });
-
-      if (insertError) {
-        await supabase.auth.admin?.deleteUser(data.user.id);
-        setServerMessage("Gagal menyimpan data admin.");
-        return;
-      }
-
-      await supabase.auth.signOut();
       router.push("/login?daftar=admin-berhasil");
-    } catch {
-      setServerMessage("Gagal mendaftarkan admin. Silakan coba lagi.");
+    } catch (e) {
+      console.error("Register fetch error:", e);
+      setServerMessage("Gagal terhubung ke server.");
     } finally {
       setIsLoading(false);
     }

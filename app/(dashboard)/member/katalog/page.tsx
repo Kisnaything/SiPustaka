@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
 import { useBuku } from '@/lib/hooks/useBuku';
-import { addPeminjaman } from '@/lib/data/peminjaman';
+import { addPeminjaman, getPeminjamanByAnggota } from '@/lib/data/peminjaman';
 
 const MAKS_PINJAM = 3;
 const DURASI_HARI = 5;
+
+const CART_KEY = 'sipustaka_cart';
 
 const kategoriList = ['Semua', 'Sastra Indonesia', 'Fiksi Ilmiah', 'Puisi', 'Bisnis', 'Sejarah', 'Self Improvement', 'Sains & Tek'];
 const tahunList = ['Semua', '1980–1999', '2000–2009', '2010–sekarang'];
@@ -26,10 +29,48 @@ type Buku = {
   isbn: string;
 };
 
+function getCart(): Buku[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveCart(items: Buku[]) {
+  localStorage.setItem(CART_KEY, JSON.stringify(items));
+}
+
 const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B'];
 
 export default function KatalogPage() {
   const { books } = useBuku();
+
+  const [userId, setUserId] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
+  const [terblokir, setTerblokir] = useState(false);
+  const [pesanBlokir, setPesanBlokir] = useState('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        setUserId(user.id);
+        setUserName(user.user_metadata?.nama_lengkap || 'Anggota');
+        const list = await getPeminjamanByAnggota(user.id);
+        const now = new Date();
+        const overdue = list.filter(
+          (p) => p.status === 'Aktif' && p.jatuh_tempo && new Date(p.jatuh_tempo) < now
+        );
+        if (overdue.length > 0) {
+          setTerblokir(true);
+          setPesanBlokir(
+            `Kamu memiliki ${overdue.length} buku yang telat dikembalikan. Selesaikan pengembalian dan denda terlebih dahulu.`
+          );
+        }
+      }
+    });
+  }, []);
 
   const [search, setSearch] = useState('');
   const [kategori, setKategori] = useState('Semua');
@@ -38,6 +79,14 @@ export default function KatalogPage() {
   const [keranjang, setKeranjang] = useState<Buku[]>([]);
   const [showKategoriDropdown, setShowKategoriDropdown] = useState(false);
   const [showTahunDropdown, setShowTahunDropdown] = useState(false);
+
+  useEffect(() => {
+    setKeranjang(getCart());
+  }, []);
+
+  useEffect(() => {
+    saveCart(keranjang);
+  }, [keranjang]);
 
   const tambahKeKeranjang = (buku: Buku) => {
     if (keranjang.length >= MAKS_PINJAM) return;
@@ -67,39 +116,38 @@ export default function KatalogPage() {
   });
 
   // ─── AJUKAN PEMINJAMAN ──────────────────────────────────────
-  const handleAjukanPeminjaman = () => {
+  const handleAjukanPeminjaman = async () => {
     if (keranjang.length === 0) return;
-
-    // TODO: nanti ganti dengan data dari session/login
-    const anggotaId = '1';
-    const anggotaNama = 'Budi Raharjo';
+    if (!userId) {
+      alert('Silakan login terlebih dahulu');
+      return;
+    }
 
     let successCount = 0;
     let errorCount = 0;
 
-    keranjang.forEach((buku) => {
-      try {
-        addPeminjaman({
-          anggota_id: anggotaId,
-          anggota_nama: anggotaNama,
-          buku_id: buku.id,
-          buku_judul: buku.judul,
-        });
+    for (const buku of keranjang) {
+      const result = await addPeminjaman({
+        anggota_id: userId,
+        anggota_nama: userName,
+        buku_id: buku.id,
+        buku_judul: buku.judul,
+      });
+      if (result.success) {
         successCount++;
-      } catch (error) {
+      } else {
         errorCount++;
-        console.error('Gagal ajukan peminjaman:', error);
+        console.error('Gagal ajukan peminjaman:', result.message);
       }
-    });
+    }
 
     if (successCount > 0) {
       setKeranjang([]);
-      alert(`✅ ${successCount} buku berhasil diajukan peminjaman!`);
+      saveCart([]);
+      alert(`${successCount} buku berhasil diajukan peminjaman!`);
       if (errorCount > 0) {
-        alert(`⚠️ ${errorCount} buku gagal diajukan.`);
+        alert(`${errorCount} buku gagal diajukan.`);
       }
-    } else {
-      alert('❌ Gagal mengajukan peminjaman.');
     }
   };
 
@@ -297,24 +345,26 @@ export default function KatalogPage() {
 
                     {!habis && (
                       <button
+                        disabled={terblokir}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          if (terblokir) return;
                           tambahKeKeranjang(buku);
                         }}
                         style={{
                           flexShrink: 0, marginLeft: '8px',
                           display: 'inline-flex', alignItems: 'center', gap: '4px',
                           padding: '4px 10px', borderRadius: '999px', border: 'none',
-                          cursor: keranjangPenuh && !diKeranjang ? 'not-allowed' : 'pointer',
+                          cursor: (keranjangPenuh && !diKeranjang) || terblokir ? 'not-allowed' : 'pointer',
                           fontSize: '12px', fontWeight: 500,
                           fontFamily: "'Plus Jakarta Sans', sans-serif",
-                          backgroundColor: diKeranjang ? '#DCFCE7' : '#FEF3DC',
-                          color: diKeranjang ? '#15803D' : '#D4891A',
+                          backgroundColor: diKeranjang ? '#DCFCE7' : terblokir ? '#F3F4F6' : '#FEF3DC',
+                          color: diKeranjang ? '#15803D' : terblokir ? '#9CA3AF' : '#D4891A',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        {diKeranjang ? '✓ Dipilih' : '+ Tambah'}
+                        {diKeranjang ? '✓ Dipilih' : terblokir ? 'Diblokir' : '+ Tambah'}
                       </button>
                     )}
                   </div>
@@ -338,17 +388,31 @@ export default function KatalogPage() {
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#D4891A' }}>{keranjang.length} Buku</span>
         </div>
 
-        <div style={{
-          backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE',
-          borderRadius: '8px', padding: '10px 12px',
-          display: 'flex', gap: '8px', alignItems: 'flex-start',
-          marginBottom: '16px', fontSize: '13px', color: '#1D4ED8',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
-            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-          </svg>
-          Maksimal peminjaman {MAKS_PINJAM} buku sekaligus.
-        </div>
+        {terblokir ? (
+          <div style={{
+            backgroundColor: '#FEE2E2', border: '1px solid #FECACA',
+            borderRadius: '8px', padding: '10px 12px',
+            display: 'flex', gap: '8px', alignItems: 'flex-start',
+            marginBottom: '16px', fontSize: '13px', color: '#DC2626',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
+              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            {pesanBlokir}
+          </div>
+        ) : (
+          <div style={{
+            backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE',
+            borderRadius: '8px', padding: '10px 12px',
+            display: 'flex', gap: '8px', alignItems: 'flex-start',
+            marginBottom: '16px', fontSize: '13px', color: '#1D4ED8',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
+              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            Maksimal peminjaman {MAKS_PINJAM} buku sekaligus.
+          </div>
+        )}
 
         <div style={{ flex: 1 }}>
           {keranjang.length === 0 ? (
@@ -402,14 +466,14 @@ export default function KatalogPage() {
           </div>
           <button
             onClick={handleAjukanPeminjaman}
-            disabled={keranjang.length === 0}
+            disabled={keranjang.length === 0 || terblokir}
             style={{
               width: '100%', padding: '12px',
-              backgroundColor: keranjang.length === 0 ? '#E5E7EB' : '#F5A623',
-              color: keranjang.length === 0 ? '#9CA3AF' : '#FFFFFF',
+              backgroundColor: keranjang.length === 0 || terblokir ? '#E5E7EB' : '#F5A623',
+              color: keranjang.length === 0 || terblokir ? '#9CA3AF' : '#FFFFFF',
               border: 'none', borderRadius: '8px',
               fontSize: '14px', fontWeight: 600,
-              cursor: keranjang.length === 0 ? 'not-allowed' : 'pointer',
+              cursor: keranjang.length === 0 || terblokir ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               transition: 'background-color 0.15s ease',

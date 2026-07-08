@@ -1,11 +1,43 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
 import { useBukuById } from '@/lib/hooks/useBuku'
+import { getPeminjamanByAnggota } from '@/lib/data/peminjaman'
+
+const CART_KEY = 'sipustaka_cart'
 
 const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8876B']
+
+type Buku = {
+  id: string
+  judul: string
+  penulis: string
+  kategori: string
+  tahun: number
+  stok: number
+  cover: string | null
+  preview: string | null
+  sinopsis: string
+  penerbit: string
+  cetakan: string
+  isbn: string
+}
+
+function getCart(): Buku[] {
+  if (typeof window === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(CART_KEY) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function saveCart(items: Buku[]) {
+  localStorage.setItem(CART_KEY, JSON.stringify(items))
+}
 
 export default function DetailBukuPage() {
   const params = useParams()
@@ -14,6 +46,26 @@ export default function DetailBukuPage() {
 
   const [ditambahkan, setDitambahkan] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [terblokir, setTerblokir] = useState(false)
+  const [pesanBlokir, setPesanBlokir] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const list = await getPeminjamanByAnggota(user.id)
+        const now = new Date()
+        const overdue = list.filter(
+          (p) => p.status === 'Aktif' && p.jatuh_tempo && new Date(p.jatuh_tempo) < now
+        )
+        if (overdue.length > 0) {
+          setTerblokir(true)
+          setPesanBlokir(
+            `Kamu memiliki ${overdue.length} buku yang telat dikembalikan. Selesaikan pengembalian dan denda terlebih dahulu.`
+          )
+        }
+      }
+    })
+  }, [])
 
   if (loading) {
     return <div style={{ padding: '48px', textAlign: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -185,18 +237,29 @@ export default function DetailBukuPage() {
 
           {/* Tombol Tambah ke Keranjang */}
           <button
-            disabled={habis || ditambahkan}
-            onClick={() => setDitambahkan(true)}
+            disabled={habis || ditambahkan || terblokir}
+            onClick={() => {
+              if (buku) {
+                const cart = getCart()
+                if (cart.length >= 3) {
+                  alert('Maksimal 3 buku dalam keranjang.')
+                  return
+                }
+                if (cart.find((b) => b.id === buku.id)) return
+                saveCart([...cart, buku as Buku])
+                setDitambahkan(true)
+              }
+            }}
             style={{
               width: '100%',
               padding: '12px',
-              backgroundColor: habis ? '#E5E7EB' : ditambahkan ? '#DCFCE7' : '#F5A623',
-              color: habis ? '#9CA3AF' : ditambahkan ? '#15803D' : '#FFFFFF',
+              backgroundColor: habis ? '#E5E7EB' : ditambahkan ? '#DCFCE7' : terblokir ? '#F3F4F6' : '#F5A623',
+              color: habis ? '#9CA3AF' : ditambahkan ? '#15803D' : terblokir ? '#9CA3AF' : '#FFFFFF',
               border: 'none',
               borderRadius: '8px',
               fontSize: '14px',
               fontWeight: 600,
-              cursor: habis || ditambahkan ? 'not-allowed' : 'pointer',
+              cursor: habis || ditambahkan || terblokir ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -207,13 +270,25 @@ export default function DetailBukuPage() {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {ditambahkan
-                ? <path d="M20 6 9 17l-5-5"/>
-                : <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>
+              {habis
+                ? <></>
+                : ditambahkan
+                  ? <path d="M20 6 9 17l-5-5"/>
+                  : <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>
               }
             </svg>
-            {habis ? 'Stok Habis' : ditambahkan ? '✓ Ditambahkan' : 'Tambah ke Keranjang'}
+            {habis ? 'Stok Habis' : ditambahkan ? '✓ Ditambahkan' : terblokir ? 'Diblokir' : 'Tambah ke Keranjang'}
           </button>
+          {terblokir && (
+            <div style={{
+              backgroundColor: '#FEE2E2', border: '1px solid #FECACA',
+              borderRadius: '8px', padding: '10px 12px',
+              marginBottom: '10px', fontSize: '12px', color: '#DC2626',
+              lineHeight: 1.5,
+            }}>
+              {pesanBlokir}
+            </div>
+          )}
 
           {/* Tombol Kembali ke Katalog */}
           <Link

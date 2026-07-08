@@ -22,8 +22,8 @@ export default function PeminjamanPage() {
   const menungguList = usePeminjamanMenunggu();
   const aktifList = usePeminjamanAktif();
 
-  const handleKonfirmasi = (kode: string) => {
-    const result = konfirmasiPengambilan(kode);
+  const handleKonfirmasi = async (kode: string) => {
+    const result = await konfirmasiPengambilan(kode);
     setMessage({
       type: result.success ? 'success' : 'error',
       text: result.message,
@@ -34,9 +34,9 @@ export default function PeminjamanPage() {
     setTimeout(() => setMessage(null), 5000);
   };
 
-  const handleBatalkan = (kode: string) => {
+  const handleBatalkan = async (kode: string) => {
     if (confirm('Yakin ingin membatalkan peminjaman ini?')) {
-      const result = batalkanPeminjaman(kode);
+      const result = await batalkanPeminjaman(kode);
       setMessage({
         type: result.success ? 'success' : 'error',
         text: result.message,
@@ -45,12 +45,12 @@ export default function PeminjamanPage() {
     }
   };
 
-  const handleScan = (e: React.FormEvent) => {
+  const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (kodeInput.trim()) {
       const found = menungguList.find((p) => p.kode_peminjaman === kodeInput.trim());
       if (found) {
-        handleKonfirmasi(kodeInput.trim());
+        await handleKonfirmasi(kodeInput.trim());
       } else {
         setMessage({
           type: 'error',

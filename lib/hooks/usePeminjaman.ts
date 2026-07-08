@@ -1,110 +1,79 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react'
 import {
   getPeminjaman,
   getPeminjamanById,
   getPeminjamanByKode,
   getPeminjamanMenunggu,
   getPeminjamanAktif,
-  subscribePeminjaman,
   Peminjaman,
-} from '@/lib/data/peminjaman';
-
-function createStorageHandlers(refresh: () => void) {
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === 'sipustaka_peminjaman') refresh();
-  };
-  const handleCustom = () => refresh();
-
-  window.addEventListener('storage', handleStorage);
-  window.addEventListener('custom-storage-update', handleCustom);
-
-  return () => {
-    window.removeEventListener('storage', handleStorage);
-    window.removeEventListener('custom-storage-update', handleCustom);
-  };
-}
+} from '@/lib/data/peminjaman'
 
 export function usePeminjaman() {
-  const [data, setData] = useState<Peminjaman[]>(getPeminjaman);
+  const [data, setData] = useState<Peminjaman[]>([])
 
-  const refresh = () => setData(getPeminjaman());
+  const refresh = useCallback(() => {
+    getPeminjaman().then(setData)
+  }, [])
 
   useEffect(() => {
-    const unsubscribe = subscribePeminjaman(refresh);
-    const cleanup = createStorageHandlers(refresh);
-    return () => {
-      unsubscribe();
-      cleanup();
-    };
-  }, []);
+    refresh()
+  }, [refresh])
 
-  return data;
+  return data
 }
 
 export function usePeminjamanMenunggu() {
-  const [data, setData] = useState<Peminjaman[]>(getPeminjamanMenunggu);
+  const [data, setData] = useState<Peminjaman[]>([])
 
-  const refresh = () => setData(getPeminjamanMenunggu());
+  const refresh = useCallback(() => {
+    getPeminjamanMenunggu().then(setData)
+  }, [])
 
   useEffect(() => {
-    const unsubscribe = subscribePeminjaman(refresh);
-    const cleanup = createStorageHandlers(refresh);
-    return () => {
-      unsubscribe();
-      cleanup();
-    };
-  }, []);
+    refresh()
+  }, [refresh])
 
-  return data;
+  return data
 }
 
 export function usePeminjamanAktif() {
-  const [data, setData] = useState<Peminjaman[]>(getPeminjamanAktif);
+  const [data, setData] = useState<Peminjaman[]>([])
 
-  const refresh = () => setData(getPeminjamanAktif());
+  const refresh = useCallback(() => {
+    getPeminjamanAktif().then(setData)
+  }, [])
 
   useEffect(() => {
-    const unsubscribe = subscribePeminjaman(refresh);
-    const cleanup = createStorageHandlers(refresh);
-    return () => {
-      unsubscribe();
-      cleanup();
-    };
-  }, []);
+    refresh()
+  }, [refresh])
 
-  return data;
+  return data
 }
 
 export function usePeminjamanById(id: string) {
-  const [data, setData] = useState<Peminjaman | undefined>(() => getPeminjamanById(id));
+  const [data, setData] = useState<Peminjaman | undefined>()
 
-  const refresh = () => setData(getPeminjamanById(id));
+  const refresh = useCallback(() => {
+    if (id) getPeminjamanById(id).then((d) => setData(d ?? undefined))
+  }, [id])
 
   useEffect(() => {
-    const unsubscribe = subscribePeminjaman(refresh);
-    const cleanup = createStorageHandlers(refresh);
-    return () => {
-      unsubscribe();
-      cleanup();
-    };
-  }, [id]);
+    refresh()
+  }, [refresh])
 
-  return data;
+  return data
 }
 
 export function usePeminjamanByKode(kode: string) {
-  const [data, setData] = useState<Peminjaman | undefined>(() => getPeminjamanByKode(kode));
+  const [data, setData] = useState<Peminjaman | undefined>()
 
-  const refresh = () => setData(getPeminjamanByKode(kode));
+  const refresh = useCallback(() => {
+    if (kode) getPeminjamanByKode(kode).then((d) => setData(d ?? undefined))
+  }, [kode])
 
   useEffect(() => {
-    const unsubscribe = subscribePeminjaman(refresh);
-    const cleanup = createStorageHandlers(refresh);
-    return () => {
-      unsubscribe();
-      cleanup();
-    };
-  }, [kode]);
+    refresh()
+  }, [refresh])
 
-  return data;
+  return data
 }

@@ -49,13 +49,12 @@ export default function VerifikasiPage() {
       setAlasan('');
       setModalOpen(true);
     } else {
-      // Langsung setujui tanpa modal
       handleVerifikasi(id, 'Lunas');
     }
   };
 
-  const handleVerifikasi = (id: string, status: 'Lunas' | 'Ditolak', pesan?: string) => {
-    const result = verifikasiDenda(id, status, pesan);
+  const handleVerifikasi = async (id: string, status: 'Lunas' | 'Ditolak', pesan?: string) => {
+    const result = await verifikasiDenda(id, status, pesan);
     setMessage({
       type: result.success ? 'success' : 'error',
       text: result.message,
@@ -223,7 +222,7 @@ export default function VerifikasiPage() {
                       <div className="flex items-center gap-2">
                         <Clock size={15} className="text-[#DC2626]" />
                         <span className="text-[13px] text-[#DC2626] font-semibold">
-                          Terlambat {peminjaman.hariTerlambat || 0} hari
+                          Terlambat {peminjaman.hari_terlambat || 0} hari
                         </span>
                       </div>
                     </div>
@@ -234,6 +233,16 @@ export default function VerifikasiPage() {
                       <span className="text-[18px] font-bold text-[#DC2626]">
                         Rp {totalDenda.toLocaleString('id-ID')}
                       </span>
+                      {peminjaman.bukti_bayar && (
+                        <a
+                          href={peminjaman.bukti_bayar}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-[13px] font-medium text-[#D4891A] underline hover:text-[#B45309]"
+                        >
+                          Lihat Bukti
+                        </a>
+                      )}
                     </div>
                   </div>
 

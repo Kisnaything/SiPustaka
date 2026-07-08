@@ -49,7 +49,7 @@ export default function DendaPage() {
       id: p.id,
       judul: p.buku_judul,
       coverColor: coverColors[parseInt(p.id) % coverColors.length],
-      hariTerlambat: p.hariTerlambat || 0,
+      hariTerlambat: p.hari_terlambat || 0,
       jumlahDenda: p.denda,
       tanggal: p.tanggal_pinjam
         ? new Date(p.tanggal_pinjam).toLocaleDateString('id-ID', {
@@ -60,6 +60,7 @@ export default function DendaPage() {
         : '-',
       status: p.status_denda || 'Belum Lunas',
       pesanDitolak: p.pesan_ditolak || null,
+      buktiBayar: p.bukti_bayar || null,
     }));
 
   const filtered = dendaList.filter((d) => {
@@ -79,18 +80,25 @@ export default function DendaPage() {
     fileInputRefs.current[id]?.click();
   };
 
-  const handleFileChange = (id: string, file: File | null) => {
+  const handleFileChange = async (id: string, file: File | null) => {
     if (!file) return;
-    setUploadedFiles((prev) => ({ ...prev, [id]: file }));
-    // Nanti di sini kita upload ke Supabase Storage, dan update status_denda menjadi 'Menunggu Verifikasi'
-    // Untuk sekarang, kita update status di store
-    const updated = {
-      status_denda: 'Menunggu Verifikasi' as const,
-      pesan_ditolak: null,
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target?.result as string;
+      const result = await updatePeminjaman(id, {
+        status_denda: 'Menunggu Verifikasi',
+        pesan_ditolak: null,
+        bukti_bayar: dataUrl,
+      });
+      if (result) {
+        setUploadedFiles((prev) => ({ ...prev, [id]: file }));
+        alert(`Bukti "${file.name}" berhasil diupload. Menunggu verifikasi admin.`);
+      } else {
+        alert('Gagal mengupload bukti. Silakan coba lagi.');
+      }
     };
-    // panggil fungsi update di store (nanti kita buat)
-    // updatePeminjaman(id, updated);
-    alert(`File "${file.name}" siap diupload untuk denda ID ${id}`);
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -314,6 +322,21 @@ export default function DendaPage() {
                           </p>
                         )}
                       </>
+                    ) : item.buktiBayar ? (
+                      <a
+                        href={item.buktiBayar}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: '#D4891A',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        Lihat Bukti
+                      </a>
                     ) : (
                       <span
                         style={{

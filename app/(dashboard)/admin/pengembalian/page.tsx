@@ -21,10 +21,10 @@ export default function PengembalianPage() {
   );
   const [search, setSearch] = useState('');
 
-  const handleKonfirmasiKembali = (id: string) => {
+  const handleKonfirmasiKembali = async (id: string) => {
     if (!confirm('Yakin buku ini sudah dikembalikan?')) return;
 
-    const result = selesaikanPeminjaman(id);
+    const result = await selesaikanPeminjaman(id);
     setMessage({
       type: result.success ? 'success' : 'error',
       text: result.message,

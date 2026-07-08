@@ -178,6 +178,24 @@ export async function POST(request: Request) {
       return Response.json({ success: false, message: msg }, { status: 500 });
     }
 
+    // 4. Notifikasi admin baru
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/notifikasi`, {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          judul: "Admin Baru Terdaftar",
+          pesan: `${namaLengkap} telah terdaftar sebagai admin baru`,
+          tipe: "anggota_baru",
+        }),
+      });
+    } catch {
+      // notifikasi gagal — tidak perlu digagalkan
+    }
+
     return Response.json({ success: true });
   } catch (err) {
     console.error("Register-admin error:", err);

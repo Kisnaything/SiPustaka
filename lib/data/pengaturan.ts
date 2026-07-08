@@ -1,71 +1,72 @@
-// lib/data/pengaturan.ts
-
 export interface Pengaturan {
-  namaPerpustakaan: string;
-  dendaPerHari: number;
-  durasiPinjam: number; // dalam hari
-  maksPinjamBuku: number;
+  id: string
+  nama_perpustakaan: string
+  denda_per_hari: number
+  durasi_pinjam: number
+  maks_pinjam_buku: number
 }
 
-const STORAGE_KEY = 'sipustaka_pengaturan';
-
-const defaultPengaturan: Pengaturan = {
-  namaPerpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
-  dendaPerHari: 2000,
-  durasiPinjam: 5,
-  maksPinjamBuku: 3,
-};
-
-// ─── Load & Save ─────────────────────────────────────────────
-function loadPengaturan(): Pengaturan {
-  if (typeof window === 'undefined') return defaultPengaturan;
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPengaturan));
-    return defaultPengaturan;
+async function api<T>(body: Record<string, unknown>): Promise<T> {
+  const res = await fetch('/api/data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) {
+    console.error('API error:', json.error)
+    throw new Error(json.error)
   }
+  return json.data as T
+}
+
+export async function getPengaturan(): Promise<Pengaturan> {
   try {
-    return JSON.parse(stored);
+    const list = await api<Pengaturan[]>({
+      table: 'pengaturan',
+      operation: 'select',
+      params: { select: '*', limit: 1 },
+    })
+    if (list.length > 0) return list[0]
+
+    const created = await api<Pengaturan>({
+      table: 'pengaturan',
+      operation: 'insert',
+      params: {
+        values: {
+          nama_perpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
+          denda_per_hari: 2000,
+          durasi_pinjam: 5,
+          maks_pinjam_buku: 3,
+        },
+        select: true,
+        single: true,
+      },
+    })
+    return created
   } catch {
-    return defaultPengaturan;
+    return {
+      id: '',
+      nama_perpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
+      denda_per_hari: 2000,
+      durasi_pinjam: 5,
+      maks_pinjam_buku: 3,
+    }
   }
 }
 
-function savePengaturan(data: Pengaturan) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
+export async function updatePengaturan(data: Partial<Pengaturan>): Promise<Pengaturan> {
+  const current = await getPengaturan()
+  if (!current.id) throw new Error('Pengaturan not found')
 
-let pengaturan: Pengaturan = loadPengaturan();
-
-// ─── Subscribe ─────────────────────────────────────────────
-let listeners: (() => void)[] = [];
-
-export function subscribePengaturan(listener: () => void) {
-  listeners.push(listener);
-  return () => {
-    listeners = listeners.filter((l) => l !== listener);
-  };
-}
-
-function notify() {
-  listeners.forEach((l) => l());
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('custom-storage-update'));
-  }
-}
-
-// ─── CRUD ──────────────────────────────────────────────────
-
-export function getPengaturan(): Pengaturan {
-  pengaturan = loadPengaturan();
-  return pengaturan;
-}
-
-export function updatePengaturan(data: Partial<Pengaturan>): Pengaturan {
-  pengaturan = { ...pengaturan, ...data };
-  savePengaturan(pengaturan);
-  notify();
-  return pengaturan;
+  return await api<Pengaturan>({
+    table: 'pengaturan',
+    operation: 'update',
+    params: {
+      values: data,
+      eq: { column: 'id', value: current.id },
+      select: true,
+      single: true,
+    },
+  })
 }

@@ -18,6 +18,8 @@ import {
   X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { usePengaturan } from '@/lib/hooks/usePengaturan';
+import { updatePengaturan } from '@/lib/data/pengaturan';
 
 function getInisial(nama: string) {
   const parts = nama.trim().split(' ')
@@ -34,9 +36,7 @@ export default function ProfilPage() {
   const [telepon, setTelepon] = useState('');
   const [username, setUsername] = useState('');
 
-  const [namaPerpustakaan, setNamaPerpustakaan] = useState('Perpustakaan Umum Daerah SiPustaka');
-  const [dendaPerHari, setDendaPerHari] = useState(2000);
-  const [durasiPinjam, setDurasiPinjam] = useState(5);
+  const pengaturan = usePengaturan();
 
   const [modalPassword, setModalPassword] = useState(false);
   const [passwordLama, setPasswordLama] = useState('');
@@ -70,8 +70,21 @@ export default function ProfilPage() {
     alert('Profil berhasil disimpan!')
   }
 
-  const handleSimpanKonfigurasi = () => {
-    alert('Konfigurasi disimpan! (nanti diintegrasikan ke database)')
+  const [namaPerpustakaan, setNamaPerpustakaan] = useState(pengaturan.nama_perpustakaan);
+  const [dendaPerHari, setDendaPerHari] = useState(pengaturan.denda_per_hari);
+  const [durasiPinjam, setDurasiPinjam] = useState(pengaturan.durasi_pinjam);
+
+  const handleSimpanKonfigurasi = async () => {
+    try {
+      await updatePengaturan({
+        nama_perpustakaan: namaPerpustakaan,
+        denda_per_hari: dendaPerHari,
+        durasi_pinjam: durasiPinjam,
+      })
+      alert('Konfigurasi berhasil disimpan!')
+    } catch {
+      alert('Gagal menyimpan konfigurasi')
+    }
   }
 
   const handleUbahPassword = async () => {

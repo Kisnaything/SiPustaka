@@ -169,6 +169,24 @@ export async function POST(request: Request) {
       return Response.json({ success: false, message: msg }, { status: 500 });
     }
 
+    // 4. Notifikasi anggota baru
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/notifikasi`, {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          judul: "Anggota Baru Terdaftar",
+          pesan: `${namaLengkap} telah mendaftar sebagai anggota baru`,
+          tipe: "anggota_baru",
+        }),
+      });
+    } catch {
+      // notifikasi gagal — tidak perlu digagalkan
+    }
+
     return Response.json({ success: true });
   } catch (err) {
     console.error("Register error:", err);

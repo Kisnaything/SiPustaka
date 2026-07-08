@@ -1,28 +1,22 @@
-// lib/hooks/usePengaturan.ts
-import { useEffect, useState } from 'react';
-import { getPengaturan, subscribePengaturan, Pengaturan } from '@/lib/data/pengaturan';
+import { useEffect, useState, useCallback } from 'react'
+import { getPengaturan, Pengaturan } from '@/lib/data/pengaturan'
 
 export function usePengaturan() {
-  const [data, setData] = useState<Pengaturan>(getPengaturan);
+  const [data, setData] = useState<Pengaturan>(() => ({
+    id: '',
+    nama_perpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
+    denda_per_hari: 2000,
+    durasi_pinjam: 5,
+    maks_pinjam_buku: 3,
+  }))
+
+  const refresh = useCallback(() => {
+    getPengaturan().then(setData)
+  }, [])
 
   useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'sipustaka_pengaturan') {
-        setData(getPengaturan());
-      }
-    };
-    const handleCustom = () => setData(getPengaturan());
+    refresh()
+  }, [refresh])
 
-    const unsubscribe = subscribePengaturan(() => setData(getPengaturan()));
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('custom-storage-update', handleCustom);
-
-    return () => {
-      unsubscribe();
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('custom-storage-update', handleCustom);
-    };
-  }, []);
-
-  return data;
+  return data
 }

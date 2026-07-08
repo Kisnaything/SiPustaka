@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/client";
 
 export type AnggotaFormData = {
   namaLengkap: string;
-  tanggalLahir: string; // format yyyy-mm-dd (dari <input type="date">)
+  tanggalLahir: string;
   alamat: string;
   noTelepon: string;
   email: string;
@@ -40,62 +39,28 @@ export function useRegisterAnggota() {
         };
       }
 
-      // 1. Cek username belum dipakai
-      const { data: existingUsername } = await supabase
-        .from("users")
-        .select("id")
-        .eq("username", data.username)
-        .maybeSingle();
-
-      if (existingUsername) {
-        return {
-          success: false,
-          message: "Username sudah digunakan",
-          field: "username",
-        };
-      }
-
-      // 2. Daftarkan akun ke Supabase Auth (email + password + role metadata)
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            role: "member",
-            nama_lengkap: data.namaLengkap,
-          },
-        },
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          namaLengkap: data.namaLengkap,
+          tanggalLahir: data.tanggalLahir,
+          alamat: data.alamat,
+          noTelepon: data.noTelepon,
+          email: data.email,
+          username: data.username,
+          password: data.password,
+        }),
       });
 
-      if (signUpError || !signUpData.user) {
-        return {
-          success: false,
-          message: signUpError?.message ?? "Gagal membuat akun",
-        };
-      }
-
-      const userId = signUpData.user.id;
-
-      // 3. Simpan ke tabel users
-      const { error: insertError } = await supabase.from("users").insert({
-        id: userId,
-        nama: data.namaLengkap,
-        email: data.email,
-        telepon: data.noTelepon,
-        alamat: data.alamat,
-        username: data.username,
-        role: "member",
-        status: "MENUNGGU",
-      });
-
-      if (insertError) {
-        return {
-          success: false,
-          message: "Gagal menyimpan data pendaftaran: " + insertError.message,
-        };
+      const result = await res.json();
+      if (!res.ok) {
+        return { success: false, message: result.message, field: result.field };
       }
 
       return { success: true };
+    } catch {
+      return { success: false, message: "Gagal terhubung ke server" };
     } finally {
       setIsLoading(false);
     }

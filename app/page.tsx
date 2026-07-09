@@ -85,12 +85,6 @@ export default function LandingPage() {
               Daftar Anggota
               <ArrowRight size={17} />
             </Link>
-            <Link
-              href="/signup-admin"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-gray-200 hover:border-amber-300 text-gray-700 text-[14px] font-semibold px-7 py-3.5 rounded-xl transition-colors"
-            >
-              Daftar Admin
-            </Link>
           </div>
         </div>
       </section>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { usePeminjamanById } from '@/lib/hooks/usePeminjaman';
 import { usePengaturan } from '@/lib/hooks/usePengaturan';
+import { useMobile } from '@/lib/hooks/useMobile';
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
   'Aktif': { bg: '#DCFCE7', color: '#15803D' },
@@ -52,6 +53,7 @@ export default function DetailPeminjamanPage() {
   const id = params.id as string;
   const data = usePeminjamanById(id);
   const pengaturan = usePengaturan();
+  const isMobile = useMobile();
 
   if (!data) {
     return (
@@ -91,7 +93,7 @@ export default function DetailPeminjamanPage() {
   return (
     <div
       style={{
-        padding: '28px 32px',
+        padding: isMobile ? '16px' : '28px 32px',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         maxWidth: '900px',
         margin: '0 auto',
@@ -169,8 +171,8 @@ export default function DetailPeminjamanPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isTerlambat ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
-            gap: '24px',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : isTerlambat ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+            gap: isMobile ? '16px' : '24px',
           }}
         >
           <div>

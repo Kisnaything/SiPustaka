@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
+import { useMobile } from '@/lib/hooks/useMobile';
 import Pagination from '@/components/Pagination';
 
 const tabs = ['Semua', 'Aktif', 'Menunggu Verifikasi', 'Selesai', 'Terlambat'];
@@ -48,6 +49,7 @@ const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8
 
 export default function PeminjamanPage() {
   const allPeminjaman = usePeminjaman();
+  const isMobile = useMobile();
   const [activeTab, setActiveTab] = useState('Semua');
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,7 +83,7 @@ export default function PeminjamanPage() {
   return (
     <div
       style={{
-        padding: '32px',
+        padding: isMobile ? '16px' : '32px',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         maxWidth: '1280px',
       }}
@@ -90,7 +92,7 @@ export default function PeminjamanPage() {
       <div style={{ marginBottom: '28px' }}>
         <h1
           style={{
-            fontSize: '28px',
+            fontSize: isMobile ? '22px' : '28px',
             fontWeight: 700,
             color: '#111827',
             margin: '0 0 6px',
@@ -107,13 +109,15 @@ export default function PeminjamanPage() {
       <div
         style={{
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? '12px' : 0,
           marginBottom: '0',
           borderBottom: '1px solid #E5E7EB',
         }}
       >
-        <div style={{ display: 'flex', gap: '0' }}>
+        <div style={{ display: 'flex', gap: '0', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -164,14 +168,15 @@ export default function PeminjamanPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              padding: '8px 12px 8px 34px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              fontSize: '14px',
-              color: '#111827',
-              outline: 'none',
-              width: '220px',
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+                padding: '8px 12px 8px 34px',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: '#111827',
+                  outline: 'none',
+                  width: isMobile ? '100%' : '220px',
+                  boxSizing: 'border-box',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
             onFocus={(e) => {
               e.target.style.borderColor = '#F5A623';
@@ -191,11 +196,13 @@ export default function PeminjamanPage() {
           border: '1px solid #E5E7EB',
           borderTop: 'none',
           borderRadius: '0 0 12px 12px',
-          overflow: 'hidden',
+          overflowX: 'auto',
           backgroundColor: '#FFFFFF',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
+        <div style={{ minWidth: isMobile ? '720px' : 'auto' }}>
         {/* Header tabel */}
         <div
           style={{
@@ -362,6 +369,7 @@ export default function PeminjamanPage() {
           })
         )}
 
+        </div>
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

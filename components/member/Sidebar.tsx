@@ -53,7 +53,7 @@ const menuItems = [
   { label: 'Profil', href: '/member/profil', icon: IconProfil },
 ]
 
-export default function Sidebar({ memberName, memberId }: { memberName?: string; memberId?: string }) {
+export default function Sidebar({ memberName, memberId, isMobile, isOpen, onClose }: { memberName?: string; memberId?: string; isMobile?: boolean; isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -68,21 +68,36 @@ export default function Sidebar({ memberName, memberId }: { memberName?: string;
   }
 
   return (
-    <aside
-      style={{
-        width: '240px',
-        minHeight: '100vh',
-        backgroundColor: '#FDF9F3',
-        borderRight: '1px solid #E5E7EB',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 40,
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
-      }}
-    >
+    <>
+      {/* Overlay untuk mobile */}
+      {isMobile && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            zIndex: 39,
+          }}
+        />
+      )}
+      <aside
+        style={{
+          width: '240px',
+          minHeight: '100vh',
+          backgroundColor: '#FDF9F3',
+          borderRight: '1px solid #E5E7EB',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 40,
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          transform: isMobile && !isOpen ? 'translateX(-100%)' : 'translateX(0)',
+          transition: 'transform 0.25s ease',
+        }}
+      >
       {/* Logo */}
       <div style={{ padding: '28px 20px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -122,6 +137,7 @@ export default function Sidebar({ memberName, memberId }: { memberName?: string;
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => { if (isMobile) onClose?.() }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -222,5 +238,6 @@ export default function Sidebar({ memberName, memberId }: { memberName?: string;
         </button>
       </div>
     </aside>
+    </>
   )
 }

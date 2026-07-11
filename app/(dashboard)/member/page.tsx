@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman'
+import { useMobile } from '@/lib/hooks/useMobile'
 import Pagination from '@/components/Pagination'
 
 function buatNomorAnggota(id: string) {
@@ -61,6 +62,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 10
+  const isMobile = useMobile()
 
   const allPeminjaman = usePeminjaman()
 
@@ -118,7 +120,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{
-      padding: '24px 32px',
+      padding: isMobile ? '16px' : '24px 32px',
       fontFamily: "'Plus Jakarta Sans', sans-serif",
       maxWidth: '1280px',
     }}>
@@ -203,52 +205,26 @@ export default function DashboardPage() {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1px',
-        backgroundColor: '#E5E7EB',
-        border: '1px solid #E5E7EB',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+        gap: isMobile ? '12px' : 0,
+        backgroundColor: isMobile ? 'transparent' : '#E5E7EB',
+        border: isMobile ? 'none' : '1px solid #E5E7EB',
         borderRadius: '12px',
         overflow: 'hidden',
         marginBottom: '40px',
       }}>
-        <div style={{ backgroundColor: '#FFFFFF', padding: '28px 24px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 500, color: '#6B7280', margin: '0 0 8px', letterSpacing: '0.05em' }}>
-            BUKU DIPINJAM
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '32px', fontWeight: 700, color: '#111827' }}>{bukuDipinjam}</span>
-            {bukuDipinjam > 0 && <Badge status="Aktif" />}
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          padding: '28px 24px',
-          borderLeft: '1px solid #E5E7EB',
-          borderRight: '1px solid #E5E7EB',
-        }}>
-          <p style={{ fontSize: '12px', fontWeight: 500, color: '#6B7280', margin: '0 0 8px', letterSpacing: '0.05em' }}>
-            JATUH TEMPO TERDEKAT
-          </p>
-          <p style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>
-            {jatuhTempoTerdekat.tanggal}
-          </p>
-          <p style={{ fontSize: '13px', color: '#6B7280', margin: 0 }}>
-            {jatuhTempoTerdekat.judul}
-          </p>
-        </div>
-
-        <div style={{ backgroundColor: '#FFFFFF', padding: '28px 24px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 500, color: '#6B7280', margin: '0 0 8px', letterSpacing: '0.05em' }}>
-            DENDA AKTIF
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '32px', fontWeight: 700, color: dendaAktif > 0 ? '#DC2626' : '#16A34A' }}>
-              Rp {dendaAktif.toLocaleString('id-ID')}
-            </span>
-            {dendaAktif > 0 && <Badge status="Belum Lunas" />}
-          </div>
-        </div>
+        <StatCard label="BUKU DIPINJAM" value={bukuDipinjam} isMobile={isMobile}>
+          {bukuDipinjam > 0 && <Badge status="Aktif" />}
+        </StatCard>
+        <StatCard
+          label="JATUH TEMPO TERDEKAT"
+          value={jatuhTempoTerdekat.tanggal}
+          sub={jatuhTempoTerdekat.judul}
+          isMobile={isMobile}
+        />
+        <StatCard label="DENDA AKTIF" value={`Rp ${dendaAktif.toLocaleString('id-ID')}`} isMobile={isMobile} isRed={dendaAktif > 0}>
+          {dendaAktif > 0 && <Badge status="Belum Lunas" />}
+        </StatCard>
       </div>
 
       <div>
@@ -274,91 +250,94 @@ export default function DashboardPage() {
         <div style={{
           border: '1px solid #E5E7EB',
           borderRadius: '12px',
-          overflow: 'hidden',
+          overflowX: 'auto',
           backgroundColor: '#FFFFFF',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          WebkitOverflowScrolling: 'touch',
         }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr 1fr 1fr 60px',
-            backgroundColor: '#F9FAFB',
-            padding: '12px 20px',
-            borderBottom: '1px solid #E5E7EB',
-          }}>
-            {['BUKU', 'TANGGAL PINJAM', 'JATUH TEMPO', 'STATUS', 'AKSI'].map((h) => (
-              <span key={h} style={{
-                fontSize: '13px',
-                fontWeight: 500,
-                color: '#374151',
-                letterSpacing: '0.04em',
-              }}>
-                {h}
-              </span>
-            ))}
-          </div>
-
-          {peminjamanAktif.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: '#6B7280' }}>
-              <p style={{ fontSize: '14px', margin: 0 }}>Tidak ada peminjaman aktif.</p>
+          <div style={{ minWidth: isMobile ? '640px' : 'auto' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 1fr 1fr 60px',
+              backgroundColor: '#F9FAFB',
+              padding: '12px 20px',
+              borderBottom: '1px solid #E5E7EB',
+            }}>
+              {['BUKU', 'TANGGAL PINJAM', 'JATUH TEMPO', 'STATUS', 'AKSI'].map((h) => (
+                <span key={h} style={{
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: '#374151',
+                  letterSpacing: '0.04em',
+                }}>
+                  {h}
+                </span>
+              ))}
             </div>
-          ) : (
-            paginatedData.map((item, i) => {
-              const display = getDisplayStatus(item)
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr 60px',
-                    padding: '16px 20px',
-                    borderBottom: i < paginatedData.length - 1 ? '1px solid #E5E7EB' : 'none',
-                    alignItems: 'center',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FFFBF0')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '40px',
-                      height: '54px',
-                      backgroundColor: coverColors[parseInt(item.id) % coverColors.length],
-                      borderRadius: '4px',
-                      flexShrink: 0,
-                    }} />
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#111827', margin: 0 }}>
-                      {item.buku_judul}
-                    </p>
-                  </div>
 
-                  <span style={{ fontSize: '14px', color: '#374151' }}>
-                    {item.tanggal_pinjam
-                      ? new Date(item.tanggal_pinjam).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-                      : '-'}
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#374151' }}>
-                    {item.jatuh_tempo
-                      ? new Date(item.jatuh_tempo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-                      : '-'}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Badge status={display.label} />
-                  </div>
+            {peminjamanAktif.length === 0 ? (
+              <div style={{ padding: '48px', textAlign: 'center', color: '#6B7280' }}>
+                <p style={{ fontSize: '14px', margin: 0 }}>Tidak ada peminjaman aktif.</p>
+              </div>
+            ) : (
+              paginatedData.map((item, i) => {
+                const display = getDisplayStatus(item)
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr 60px',
+                      padding: '16px 20px',
+                      borderBottom: i < paginatedData.length - 1 ? '1px solid #E5E7EB' : 'none',
+                      alignItems: 'center',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FFFBF0')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '54px',
+                        backgroundColor: coverColors[parseInt(item.id) % coverColors.length],
+                        borderRadius: '4px',
+                        flexShrink: 0,
+                      }} />
+                      <p style={{ fontSize: '14px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                        {item.buku_judul}
+                      </p>
+                    </div>
 
-                  <button style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#6B7280',
-                    fontSize: '20px',
-                    padding: '4px 8px',
-                    letterSpacing: '2px',
-                  }}>
-                    ⋮
-                  </button>
-                </div>
-              )
-            })
-          )}
+                    <span style={{ fontSize: '14px', color: '#374151' }}>
+                      {item.tanggal_pinjam
+                        ? new Date(item.tanggal_pinjam).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+                        : '-'}
+                    </span>
+                    <span style={{ fontSize: '14px', color: '#374151' }}>
+                      {item.jatuh_tempo
+                        ? new Date(item.jatuh_tempo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+                        : '-'}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <Badge status={display.label} />
+                    </div>
+
+                    <button style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#6B7280',
+                      fontSize: '20px',
+                      padding: '4px 8px',
+                      letterSpacing: '2px',
+                    }}>
+                      ⋮
+                    </button>
+                  </div>
+                )
+              })
+            )}
+          </div>
         </div>
       </div>
 
@@ -368,6 +347,30 @@ export default function DashboardPage() {
         totalItems={peminjamanAktif.length}
         onPageChange={setCurrentPage}
       />
+    </div>
+  )
+}
+
+function StatCard({ label, value, sub, children, isMobile, isRed }: {
+  label: string; value: string | number; sub?: string; children?: React.ReactNode; isMobile: boolean; isRed?: boolean;
+}) {
+  return (
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      padding: '28px 24px',
+      borderRadius: isMobile ? '12px' : 0,
+      border: isMobile ? '1px solid #E5E7EB' : 'none',
+    }}>
+      <p style={{ fontSize: '12px', fontWeight: 500, color: '#6B7280', margin: '0 0 8px', letterSpacing: '0.05em' }}>
+        {label}
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ fontSize: '32px', fontWeight: 700, color: isRed ? '#DC2626' : '#111827' }}>
+          {value}
+        </span>
+        {children}
+      </div>
+      {sub && <p style={{ fontSize: '13px', color: '#6B7280', margin: '4px 0 0' }}>{sub}</p>}
     </div>
   )
 }

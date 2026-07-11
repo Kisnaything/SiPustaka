@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useBuku } from '@/lib/hooks/useBuku';
+import { useMobile } from '@/lib/hooks/useMobile';
 import { addPeminjaman, getPeminjamanByAnggota } from '@/lib/data/peminjaman';
 import Pagination from '@/components/Pagination';
 
@@ -47,6 +48,7 @@ const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8
 
 export default function KatalogPage() {
   const { books } = useBuku();
+  const isMobile = useMobile();
 
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
@@ -186,10 +188,10 @@ export default function KatalogPage() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
       {/* Konten utama */}
-      <div style={{ flex: 1, padding: '24px 28px', minWidth: 0 }}>
+      <div style={{ flex: 1, padding: isMobile ? '16px' : '24px 28px', minWidth: 0 }}>
 
         <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '20px' }}>
           Katalog Buku
@@ -319,7 +321,7 @@ export default function KatalogPage() {
             <p style={{ fontSize: '14px', margin: 0 }}>Coba kata kunci atau filter yang berbeda</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: isMobile ? '10px' : '16px' }}>
             {paginatedData.map((buku, i) => {
               const habis = buku.stok === 0;
               const diKeranjang = sudahDiKeranjang(buku.id);
@@ -421,10 +423,13 @@ export default function KatalogPage() {
 
       {/* ─── Panel Keranjang ─── */}
       <div style={{
-        width: '280px', flexShrink: 0,
-        borderLeft: '1px solid #E5E7EB', backgroundColor: '#FFFFFF',
-        padding: '24px 20px', position: 'sticky', top: 0,
-        height: '100vh', overflowY: 'auto',
+        width: isMobile ? 'auto' : '280px', flexShrink: 0,
+        borderLeft: isMobile ? 'none' : '1px solid #E5E7EB',
+        borderTop: isMobile ? '1px solid #E5E7EB' : 'none',
+        backgroundColor: '#FFFFFF',
+        padding: isMobile ? '16px' : '24px 20px',
+        position: isMobile ? 'static' : 'sticky', top: 0,
+        height: isMobile ? 'auto' : '100vh', overflowY: isMobile ? 'visible' : 'auto',
         display: 'flex', flexDirection: 'column',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
+import { useMobile } from '@/lib/hooks/useMobile';
 import { updatePeminjaman } from '@/lib/data/peminjaman';
 import { supabase } from '@/lib/supabase/client';
 import Pagination from '@/components/Pagination';
@@ -40,6 +41,7 @@ const coverColors = ['#374151', '#0E7490', '#C8B89A', '#8FA68B', '#D4A574'];
 
 export default function DendaPage() {
   const allPeminjaman = usePeminjaman();
+  const isMobile = useMobile();
   const [activeTab, setActiveTab] = useState('Semua');
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -126,12 +128,12 @@ export default function DendaPage() {
   return (
     <div
       style={{
-        padding: '28px 32px',
+        padding: isMobile ? '16px' : '28px 32px',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         maxWidth: '1100px',
       }}
     >
-      <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>
+      <h1 style={{ fontSize: isMobile ? '20px' : '22px', fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>
         Denda
       </h1>
 
@@ -175,11 +177,12 @@ export default function DendaPage() {
           border: '1px solid #E5E7EB',
           borderRadius: '12px',
           backgroundColor: '#FFFFFF',
-          overflow: 'hidden',
+          overflowX: 'auto',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
-        <div style={{ display: 'flex', borderBottom: '1px solid #E5E7EB', padding: '0 16px' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid #E5E7EB', padding: '0 16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -203,6 +206,7 @@ export default function DendaPage() {
           ))}
         </div>
 
+        <div style={{ minWidth: isMobile ? '720px' : 'auto' }}>
         <div
           style={{
             display: 'grid',
@@ -408,6 +412,7 @@ export default function DendaPage() {
             );
           })
         )}
+        </div>
       </div>
 
       <Pagination

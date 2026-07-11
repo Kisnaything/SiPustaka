@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman'
+import { useMobile } from '@/lib/hooks/useMobile'
 
 function getInisial(nama: string) {
   const parts = nama.trim().split(' ')
@@ -23,6 +24,7 @@ function nomorAnggota(id: string) {
 
 export default function ProfilPage() {
   const router = useRouter()
+  const isMobile = useMobile()
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [form, setForm] = useState({
@@ -119,7 +121,7 @@ export default function ProfilPage() {
 
   return (
     <div style={{
-      padding: '32px',
+      padding: isMobile ? '16px' : '32px',
       fontFamily: "'Plus Jakarta Sans', sans-serif",
       maxWidth: '700px',
       margin: '0 auto',
@@ -163,7 +165,7 @@ export default function ProfilPage() {
       {/* Stat cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
         gap: '12px',
         marginBottom: '28px',
       }}>

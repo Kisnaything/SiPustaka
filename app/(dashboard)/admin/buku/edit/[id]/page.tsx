@@ -232,13 +232,16 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
                 className="w-full appearance-none text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
               >
                 <option value="">Pilih kategori</option>
-                <option value="Sains & Tek">Sains &amp; Tek</option>
                 <option value="Self Improvement">Self Improvement</option>
-                <option value="Bisnis">Bisnis</option>
-                <option value="Sejarah">Sejarah</option>
-                <option value="Sastra Indonesia">Sastra Indonesia</option>
-                <option value="Puisi">Puisi</option>
-                <option value="Fiksi Ilmiah">Fiksi Ilmiah</option>
+                <option value="Romance">Romance</option>
+                <option value="Fantasy">Fantasy</option>
+                <option value="Thriller & Mystery">Thriller &amp; Mystery</option>
+                <option value="Young Adult (YA)">Young Adult (YA)</option>
+                <option value="Business & Finance">Business &amp; Finance</option>
+                <option value="Technology & Artificial Intelligence">Technology &amp; Artificial Intelligence</option>
+                <option value="Psychology">Psychology</option>
+                <option value="Productivity">Productivity</option>
+                <option value="Science Fiction (Sci-Fi)">Science Fiction (Sci-Fi)</option>
               </select>
               <ChevronDown
                 size={16}

@@ -11,7 +11,7 @@ const DURASI_HARI = 5;
 
 const CART_KEY = 'sipustaka_cart';
 
-const kategoriList = ['Semua', 'Sastra Indonesia', 'Fiksi Ilmiah', 'Puisi', 'Bisnis', 'Sejarah', 'Self Improvement', 'Sains & Tek'];
+const kategoriList = ['Semua', 'Self Improvement', 'Romance', 'Fantasy', 'Thriller & Mystery', 'Young Adult (YA)', 'Business & Finance', 'Technology & Artificial Intelligence', 'Psychology', 'Productivity', 'Science Fiction (Sci-Fi)'];
 const tahunList = ['Semua', '1980–1999', '2000–2009', '2010–sekarang'];
 
 type Buku = {
@@ -76,27 +76,23 @@ export default function KatalogPage() {
   const [kategori, setKategori] = useState('Semua');
   const [tahun, setTahun] = useState('Semua');
   const [tersediaSaja, setTersediaSaja] = useState(false);
-  const [keranjang, setKeranjang] = useState<Buku[]>([]);
+  const [keranjang, setKeranjang] = useState<Buku[]>(() => getCart());
   const [showKategoriDropdown, setShowKategoriDropdown] = useState(false);
   const [showTahunDropdown, setShowTahunDropdown] = useState(false);
-
-  useEffect(() => {
-    setKeranjang(getCart());
-  }, []);
-
-  useEffect(() => {
-    saveCart(keranjang);
-  }, [keranjang]);
 
   const tambahKeKeranjang = (buku: Buku) => {
     if (keranjang.length >= MAKS_PINJAM) return;
     if (keranjang.find((b) => b.id === buku.id)) return;
     if (buku.stok === 0) return;
-    setKeranjang([...keranjang, buku]);
+    const next = [...keranjang, buku];
+    setKeranjang(next);
+    saveCart(next);
   };
 
   const hapusDariKeranjang = (id: string) => {
-    setKeranjang(keranjang.filter((b) => b.id !== id));
+    const next = keranjang.filter((b) => b.id !== id);
+    setKeranjang(next);
+    saveCart(next);
   };
 
   const sudahDiKeranjang = (id: string) => keranjang.some((b) => b.id === id);
@@ -340,6 +336,9 @@ export default function KatalogPage() {
                       </p>
                       <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>
                         {buku.penulis}
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '4px 0 0' }}>
+                        Stok: {buku.stok}
                       </p>
                     </div>
 

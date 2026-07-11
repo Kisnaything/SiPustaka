@@ -37,13 +37,16 @@ const getStatus = (stok: number): Status => {
 };
 
 const coverColors: Record<string, string> = {
-  'Sains & Tek': 'bg-[#F97316]',
   'Self Improvement': 'bg-[#D9C6A5]',
-  Bisnis: 'bg-[#1E293B]',
-  Sejarah: 'bg-[#F5F0E6]',
-  'Sastra Indonesia': 'bg-[#8B5A2B]',
-  Puisi: 'bg-[#A67B5B]',
-  'Fiksi Ilmiah': 'bg-[#2C3E50]',
+  Romance: 'bg-[#E57373]',
+  Fantasy: 'bg-[#7B1FA2]',
+  'Thriller & Mystery': 'bg-[#37474F]',
+  'Young Adult (YA)': 'bg-[#FF8A65]',
+  'Business & Finance': 'bg-[#1E293B]',
+  'Technology & Artificial Intelligence': 'bg-[#1565C0]',
+  Psychology: 'bg-[#4DB6AC]',
+  Productivity: 'bg-[#43A047]',
+  'Science Fiction (Sci-Fi)': 'bg-[#2C3E50]',
 };
 
 export default function BukuPage() {

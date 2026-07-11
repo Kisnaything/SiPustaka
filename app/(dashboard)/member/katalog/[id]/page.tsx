@@ -356,7 +356,7 @@ export default function DetailBukuPage() {
           {/* Info grid */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(5, 1fr)',
             gap: '1px',
             backgroundColor: '#E5E7EB',
             border: '1px solid #E5E7EB',
@@ -369,6 +369,7 @@ export default function DetailBukuPage() {
               { label: 'TAHUN TERBIT', value: buku.tahun },
               { label: 'CETAKAN', value: buku.cetakan || 'Ke-1' },
               { label: 'ISBN', value: buku.isbn },
+              { label: 'STOK', value: buku.stok > 0 ? `${buku.stok} tersedia` : 'Habis' },
             ].map((item) => (
               <div key={item.label} style={{ backgroundColor: '#FFFFFF', padding: '16px 18px' }}>
                 <p style={{ fontSize: '11px', fontWeight: 500, color: '#9CA3AF', margin: '0 0 6px', letterSpacing: '0.06em' }}>

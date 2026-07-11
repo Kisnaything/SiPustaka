@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -17,16 +17,16 @@ import {
 } from 'lucide-react';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
 import { verifikasiDenda } from '@/lib/data/peminjaman';
+import Pagination from '@/components/Pagination';
+
+const statusDendaTabs = ['Semua', 'Menunggu Verifikasi', 'Lunas', 'Ditolak'] as const;
+type TabStatus = (typeof statusDendaTabs)[number];
 
 export default function VerifikasiPage() {
   const allPeminjaman = usePeminjaman();
 
-  // Filter denda yang statusnya 'Menunggu Verifikasi'
-  const waitingList = allPeminjaman.filter(
-    (p) => p.status === 'Selesai' && p.status_denda === 'Menunggu Verifikasi'
-  );
-
   const [search, setSearch] = useState('');
+  const [statusTab, setStatusTab] = useState<TabStatus>('Menunggu Verifikasi');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [alasan, setAlasan] = useState('');
@@ -34,13 +34,31 @@ export default function VerifikasiPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
-  const filtered = waitingList.filter(
-    (p) =>
+  const semuaDenda = allPeminjaman.filter(
+    (p) => p.status === 'Selesai' && p.denda > 0
+  );
+
+  const filtered = semuaDenda.filter((p) => {
+    const matchSearch =
       p.anggota_nama.toLowerCase().includes(search.toLowerCase()) ||
       p.buku_judul.toLowerCase().includes(search.toLowerCase()) ||
-      p.kode_peminjaman.toLowerCase().includes(search.toLowerCase())
+      p.kode_peminjaman.toLowerCase().includes(search.toLowerCase());
+    const matchTab = statusTab === 'Semua' || p.status_denda === statusTab;
+    return matchSearch && matchTab;
+  });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusTab]);
 
   const handleOpenModal = (id: string, action: 'tolak' | 'setujui') => {
     setSelectedId(id);
@@ -93,28 +111,33 @@ export default function VerifikasiPage() {
           <p className="text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide">
             Total Menunggu
           </p>
-          <p className="text-[26px] font-bold text-[#CA8A04] mt-2">{waitingList.length}</p>
+          <p className="text-[26px] font-bold text-[#CA8A04] mt-2">
+            {semuaDenda.filter((p) => p.status_denda === 'Menunggu Verifikasi').length}
+          </p>
         </div>
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
           <p className="text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide">
             Total Denda Diverifikasi
           </p>
           <p className="text-[26px] font-bold text-[#16A34A] mt-2">
-            {allPeminjaman.filter((p) => p.status === 'Selesai' && p.status_denda === 'Lunas')
-              .length || 0}
+            {semuaDenda.filter((p) => p.status_denda === 'Lunas').length || 0}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
           <p className="text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide">
-            Rata-rata Respon
+            Total Ditolak
           </p>
-          <p className="text-[26px] font-bold text-[#111827] mt-2">15 Menit</p>
+          <p className="text-[26px] font-bold text-[#DC2626] mt-2">
+            {semuaDenda.filter((p) => p.status_denda === 'Ditolak').length || 0}
+          </p>
         </div>
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
           <p className="text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide">
-            Efisiensi Verifikasi
+            Total Denda
           </p>
-          <p className="text-[26px] font-bold text-[#111827] mt-2">98%</p>
+          <p className="text-[26px] font-bold text-[#111827] mt-2">
+            {semuaDenda.length}
+          </p>
         </div>
       </div>
 
@@ -129,7 +152,24 @@ export default function VerifikasiPage() {
             className="w-full pl-9 pr-4 py-2.5 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] border border-[#E5E7EB] rounded-xl bg-white outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/30"
           />
         </div>
-        <span className="text-[13px] text-[#585F6C]">{filtered.length} menunggu verifikasi</span>
+        <span className="text-[13px] text-[#585F6C]">{filtered.length} data</span>
+      </div>
+
+      {/* Status Tabs */}
+      <div className="flex items-center gap-1 mt-4 border-b border-[#E5E7EB]">
+        {statusDendaTabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setStatusTab(tab)}
+            className={`pb-3 px-4 text-[13px] font-semibold transition-colors ${
+              statusTab === tab
+                ? 'text-[#B45309] border-b-2 border-[#B45309]'
+                : 'text-[#585F6C] hover:text-[#111827]'
+            }`}
+          >
+            {tab === 'Menunggu Verifikasi' ? 'Menunggu' : tab}
+          </button>
+        ))}
       </div>
 
       {/* Message */}
@@ -150,13 +190,13 @@ export default function VerifikasiPage() {
         {filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-10 text-center">
             <p className="text-[#9CA3AF] text-[15px]">
-              {search
-                ? 'Tidak ada pengajuan verifikasi yang sesuai dengan pencarian.'
-                : 'Tidak ada denda yang menunggu verifikasi.'}
+                  {search
+                    ? 'Tidak ada data yang sesuai dengan pencarian.'
+                    : `Tidak ada denda dengan status "${statusTab === 'Menunggu Verifikasi' ? 'Menunggu' : statusTab}".`}
             </p>
           </div>
         ) : (
-          filtered.map((peminjaman) => {
+          paginatedData.map((peminjaman) => {
             const totalDenda = peminjaman.denda || 0;
             return (
               <div
@@ -238,30 +278,46 @@ export default function VerifikasiPage() {
                           href={peminjaman.bukti_bayar}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="ml-2 text-[13px] font-medium text-[#D4891A] underline hover:text-[#B45309]"
+                          className="block ml-2"
                         >
-                          Lihat Bukti
+                          <img src={peminjaman.bukti_bayar} alt="Bukti Pembayaran"
+                            className="h-20 rounded-lg border border-[#E5E7EB] hover:opacity-80 transition-opacity"
+                          />
                         </a>
                       )}
                     </div>
                   </div>
 
-                  {/* Aksi */}
+                  {/* Aksi / Status */}
                   <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => handleOpenModal(peminjaman.id, 'tolak')}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg text-[13px] font-semibold transition-colors"
-                    >
-                      <XCircle size={15} />
-                      Tolak
-                    </button>
-                    <button
-                      onClick={() => handleOpenModal(peminjaman.id, 'setujui')}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-lg text-[13px] font-semibold transition-colors shadow-sm"
-                    >
-                      <CheckCircle size={15} />
-                      Setujui — Lunas
-                    </button>
+                    {peminjaman.status_denda === 'Menunggu Verifikasi' ? (
+                      <>
+                        <button
+                          onClick={() => handleOpenModal(peminjaman.id, 'tolak')}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg text-[13px] font-semibold transition-colors"
+                        >
+                          <XCircle size={15} />
+                          Tolak
+                        </button>
+                        <button
+                          onClick={() => handleOpenModal(peminjaman.id, 'setujui')}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-lg text-[13px] font-semibold transition-colors shadow-sm"
+                        >
+                          <CheckCircle size={15} />
+                          Setujui — Lunas
+                        </button>
+                      </>
+                    ) : (
+                      <span className={`text-[12px] font-semibold px-3 py-1.5 rounded-full ${
+                        peminjaman.status_denda === 'Lunas'
+                          ? 'bg-[#DCFCE7] text-[#16A34A]'
+                          : peminjaman.status_denda === 'Ditolak'
+                          ? 'bg-[#FEE2E2] text-[#DC2626]'
+                          : 'bg-[#F3F4F6] text-[#6B7280]'
+                      }`}>
+                        {peminjaman.status_denda || 'Belum Lunas'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -269,6 +325,13 @@ export default function VerifikasiPage() {
           })
         )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        onPageChange={setCurrentPage}
+      />
 
       {/* ─── Modal Tolak ─── */}
       {modalOpen && (

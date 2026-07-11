@@ -32,6 +32,7 @@ export default function TambahBukuPage() {
   const [kategori, setKategori] = useState('');
   const [sinopsis, setSinopsis] = useState('');
   const [kodeRak, setKodeRak] = useState('');
+  const [cetakan, setCetakan] = useState('Ke-1');
   const [stok, setStok] = useState(1);
   const [kondisi, setKondisi] = useState<Kondisi>('Baru');
 
@@ -100,7 +101,7 @@ export default function TambahBukuPage() {
   };
 
   // ─── Submit ───
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!judul || !penulis || !kategori) {
       alert('Harap lengkapi field yang wajib (judul, penulis, kategori)');
       return;
@@ -112,16 +113,18 @@ export default function TambahBukuPage() {
       kategori,
       penerbit: penerbit || 'Unknown',
       tahun: parseInt(tahun) || new Date().getFullYear(),
-      cetakan: 'Ke-1',
+      cetakan,
       isbn: isbn || '000-000-000-0',
       stok,
+      kode_rak: kodeRak,
+      kondisi,
       cover: coverBase64,
       preview: previewBase64, // ← ini yang penting
       sinopsis: sinopsis || 'Tidak ada sinopsis',
     };
 
-    addBook(newBook);
-    router.push('/admin/buku');
+    const result = await addBook(newBook);
+    if (result) router.push('/admin/buku');
   };
 
   return (

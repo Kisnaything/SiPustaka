@@ -147,12 +147,12 @@ export default function DashboardPage() {
 
   const monthData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const currentYear = new Date().getFullYear();
+    const selectedYear = parseInt(year.replace('Tahun ', '')) || new Date().getFullYear();
     const counts = Array(12).fill(0);
 
     peminjamanList.forEach((p) => {
       const date = p.tanggal_pinjam ? new Date(p.tanggal_pinjam) : new Date(p.tanggal_reservasi);
-      if (date.getFullYear() === currentYear) {
+      if (date.getFullYear() === selectedYear) {
         const month = date.getMonth();
         counts[month] += 1;
       }
@@ -165,9 +165,14 @@ export default function DashboardPage() {
     const values = counts.slice(start, currentMonth + 1);
 
     return { labels, values };
-  }, [peminjamanList]);
+  }, [peminjamanList, year]);
 
   const maxValue = Math.max(...monthData.values, 1);
+
+  // ─── Trend peminjaman (month-over-month) ───────────────
+  const currentMonthCount = monthData.values[monthData.values.length - 1] || 0;
+  const prevMonthCount = monthData.values.length > 1 ? monthData.values[monthData.values.length - 2] || 0 : 0;
+  const chartTrend = currentMonthCount - prevMonthCount;
 
   // ─── Conditional rendering ─────────────────────────────
   if (loadingBuku) {
@@ -179,8 +184,8 @@ export default function DashboardPage() {
     {
       label: 'Total Buku',
       value: stats.totalBuku.toString(),
-      trend: `${bukuList.length > 0 ? '+' : ''}${bukuList.length}`,
-      trendUp: true,
+      trend: chartTrend > 0 ? `+${chartTrend}` : chartTrend < 0 ? `${chartTrend}` : '0',
+      trendUp: chartTrend >= 0,
       icon: BookOpen,
       iconBg: 'bg-[#FDECC8]',
       iconColor: 'text-[#B45309]',

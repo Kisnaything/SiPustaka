@@ -6,8 +6,6 @@ export function usePengaturan() {
     id: '',
     nama_perpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
     denda_per_hari: 2000,
-    durasi_pinjam: 5,
-    maks_pinjam_buku: 3,
   }))
 
   const refresh = useCallback(() => {

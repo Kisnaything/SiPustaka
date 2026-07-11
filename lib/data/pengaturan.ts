@@ -2,8 +2,6 @@ export interface Pengaturan {
   id: string
   nama_perpustakaan: string
   denda_per_hari: number
-  durasi_pinjam: number
-  maks_pinjam_buku: number
 }
 
 async function api<T>(body: Record<string, unknown>): Promise<T> {
@@ -36,8 +34,6 @@ export async function getPengaturan(): Promise<Pengaturan> {
         values: {
           nama_perpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
           denda_per_hari: 2000,
-          durasi_pinjam: 5,
-          maks_pinjam_buku: 3,
         },
         select: true,
         single: true,
@@ -49,8 +45,6 @@ export async function getPengaturan(): Promise<Pengaturan> {
       id: '',
       nama_perpustakaan: 'Perpustakaan Umum Daerah SiPustaka',
       denda_per_hari: 2000,
-      durasi_pinjam: 5,
-      maks_pinjam_buku: 3,
     }
   }
 }

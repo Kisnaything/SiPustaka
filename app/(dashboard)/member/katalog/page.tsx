@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useBuku } from '@/lib/hooks/useBuku';
 import { addPeminjaman, getPeminjamanByAnggota } from '@/lib/data/peminjaman';
+import Pagination from '@/components/Pagination';
 
 const MAKS_PINJAM = 3;
 const DURASI_HARI = 5;
@@ -59,13 +60,27 @@ export default function KatalogPage() {
         setUserName(user.user_metadata?.nama_lengkap || 'Anggota');
         const list = await getPeminjamanByAnggota(user.id);
         const now = new Date();
+
+        // Cek buku telat dikembalikan
         const overdue = list.filter(
           (p) => p.status === 'Aktif' && p.jatuh_tempo && new Date(p.jatuh_tempo) < now
         );
+
+        // Cek denda belum lunas
+        const dendaBelumLunas = list.filter(
+          (p) => p.status === 'Selesai' && p.denda > 0 &&
+            (p.status_denda === 'Belum Lunas' || p.status_denda === 'Menunggu Verifikasi' || p.status_denda === 'Ditolak')
+        );
+
         if (overdue.length > 0) {
           setTerblokir(true);
           setPesanBlokir(
             `Kamu memiliki ${overdue.length} buku yang telat dikembalikan. Selesaikan pengembalian dan denda terlebih dahulu.`
+          );
+        } else if (dendaBelumLunas.length > 0) {
+          setTerblokir(true);
+          setPesanBlokir(
+            `Kamu memiliki denda sebesar Rp ${dendaBelumLunas.reduce((s, p) => s + p.denda, 0).toLocaleString('id-ID')} yang belum dibayar. Selesaikan denda terlebih dahulu.`
           );
         }
       }
@@ -79,6 +94,8 @@ export default function KatalogPage() {
   const [keranjang, setKeranjang] = useState<Buku[]>(() => getCart());
   const [showKategoriDropdown, setShowKategoriDropdown] = useState(false);
   const [showTahunDropdown, setShowTahunDropdown] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const tambahKeKeranjang = (buku: Buku) => {
     if (keranjang.length >= MAKS_PINJAM) return;
@@ -111,6 +128,16 @@ export default function KatalogPage() {
     return matchSearch && matchKategori && matchTersedia && matchTahun;
   });
 
+  const totalPages = Math.ceil(bukuFiltered.length / ITEMS_PER_PAGE);
+  const paginatedData = bukuFiltered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, kategori, tahun, tersediaSaja]);
+
   // ─── AJUKAN PEMINJAMAN ──────────────────────────────────────
   const handleAjukanPeminjaman = async () => {
     if (keranjang.length === 0) return;
@@ -119,8 +146,23 @@ export default function KatalogPage() {
       return;
     }
 
+    const semua = await getPeminjamanByAnggota(userId);
+    const peminjamanBerjalan = semua.filter(
+      (p) => p.status === 'Aktif' || p.status === 'Menunggu Konfirmasi'
+    );
+    const sisaSlot = MAKS_PINJAM - peminjamanBerjalan.length;
+
+    if (sisaSlot <= 0) {
+      alert(`Kamu sudah memiliki ${peminjamanBerjalan.length} peminjaman aktif. Maksimal ${MAKS_PINJAM} peminjaman aktif per anggota.`);
+      return;
+    }
+
+    if (keranjang.length > sisaSlot) {
+      alert(`Kamu hanya bisa menambahkan ${sisaSlot} buku lagi (maksimal ${MAKS_PINJAM} peminjaman aktif).`);
+      return;
+    }
+
     let successCount = 0;
-    let errorCount = 0;
 
     for (const buku of keranjang) {
       const result = await addPeminjaman({
@@ -132,7 +174,6 @@ export default function KatalogPage() {
       if (result.success) {
         successCount++;
       } else {
-        errorCount++;
         console.error('Gagal ajukan peminjaman:', result.message);
       }
     }
@@ -141,9 +182,6 @@ export default function KatalogPage() {
       setKeranjang([]);
       saveCart([]);
       alert(`${successCount} buku berhasil diajukan peminjaman!`);
-      if (errorCount > 0) {
-        alert(`${errorCount} buku gagal diajukan.`);
-      }
     }
   };
 
@@ -282,7 +320,7 @@ export default function KatalogPage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            {bukuFiltered.map((buku, i) => {
+            {paginatedData.map((buku, i) => {
               const habis = buku.stok === 0;
               const diKeranjang = sudahDiKeranjang(buku.id);
               const keranjangPenuh = keranjang.length >= MAKS_PINJAM;
@@ -372,6 +410,13 @@ export default function KatalogPage() {
             })}
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={bukuFiltered.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* ─── Panel Keranjang ─── */}
@@ -429,9 +474,13 @@ export default function KatalogPage() {
                 }}>
                   <div style={{
                     width: '36px', height: '48px', flexShrink: 0,
-                    backgroundColor: coverColors[parseInt(buku.id) % coverColors.length],
-                    borderRadius: '4px',
-                  }} />
+                    backgroundColor: buku.cover ? undefined : coverColors[parseInt(buku.id) % coverColors.length],
+                    borderRadius: '4px', overflow: 'hidden',
+                  }}>
+                    {buku.cover && (
+                      <img src={buku.cover} alt={buku.judul} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {buku.judul}

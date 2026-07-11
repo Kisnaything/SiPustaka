@@ -1,20 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
-  Filter,
   ChevronDown,
   Plus,
-  ChevronLeft,
-  ChevronRight,
   Pencil,
   Trash2,
-  BookOpen,
 } from 'lucide-react';
 import { useBuku } from '@/lib/hooks/useBuku';
 import { deleteBook } from '@/lib/data/buku';
+import Pagination from '@/components/Pagination';
 
 type Status = 'Tersedia' | 'Hampir Habis' | 'Kosong';
 
@@ -50,8 +47,14 @@ const coverColors: Record<string, string> = {
 };
 
 export default function BukuPage() {
-  const { books, loading } = useBuku(); // ← DESTRUCTURE!
+  const { books, loading } = useBuku();
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filterKategori, setFilterKategori] = useState('Semua');
+  const [showKategoriDropdown, setShowKategoriDropdown] = useState(false);
+  const ITEMS_PER_PAGE = 10;
+
+  const categories = ['Semua', ...new Set(books.map(b => b.kategori))];
 
   const handleDelete = async (id: string) => {
     if (confirm('Yakin ingin menghapus buku ini?')) {
@@ -61,12 +64,20 @@ export default function BukuPage() {
 
   const filteredBooks = books.filter((b) => {
     const q = search.toLowerCase();
-    return (
-      b.judul.toLowerCase().includes(q) ||
-      b.penulis.toLowerCase().includes(q) ||
-      b.isbn.includes(q)
-    );
+    const matchSearch = b.judul.toLowerCase().includes(q) || b.penulis.toLowerCase().includes(q) || b.isbn.includes(q);
+    const matchKategori = filterKategori === 'Semua' || b.kategori === filterKategori;
+    return matchSearch && matchKategori;
   });
+
+  const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredBooks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterKategori]);
 
   if (loading) {
     return <div className="p-6 text-[#585F6C]">Loading...</div>;
@@ -91,7 +102,7 @@ export default function BukuPage() {
         </Link>
       </div>
 
-      {/* Filter bar — sama seperti sebelumnya, tidak perlu diubah */}
+      {/* Filter bar */}
       <div className="flex items-center gap-3 bg-[#FFF8EE] border border-[#F3E5C8] rounded-xl px-4 py-3 mt-6">
         <div className="flex items-center gap-2 flex-1 bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
           <Search size={16} className="text-[#9CA3AF]" />
@@ -103,20 +114,28 @@ export default function BukuPage() {
           />
         </div>
 
-        <button className="flex items-center gap-1.5 text-[14px] font-medium text-[#374151] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
-          Semua Kategori
-          <ChevronDown size={16} className="text-[#9CA3AF]" />
-        </button>
-
-        <button className="flex items-center gap-1.5 text-[14px] font-medium text-[#374151] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
-          Status Stok
-          <ChevronDown size={16} className="text-[#9CA3AF]" />
-        </button>
-
-        <button className="flex items-center gap-1.5 text-[14px] font-medium text-[#374151] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
-          <Filter size={15} className="text-[#9CA3AF]" />
-          Lainnya
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowKategoriDropdown(!showKategoriDropdown)}
+            className="flex items-center gap-1.5 text-[14px] font-medium text-[#374151] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5"
+          >
+            {filterKategori === 'Semua' ? 'Semua Kategori' : filterKategori}
+            <ChevronDown size={16} className="text-[#9CA3AF]" />
+          </button>
+          {showKategoriDropdown && (
+            <div className="absolute top-full left-0 z-10 bg-white border rounded-lg shadow-lg mt-1 min-w-[180px]">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => { setFilterKategori(cat); setShowKategoriDropdown(false) }}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -145,20 +164,31 @@ export default function BukuPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredBooks.map((book, index) => {
+            {filteredBooks.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-[#9CA3AF]">
+                  {search ? 'Tidak ada buku yang sesuai' : 'Belum ada buku terdaftar'}
+                </td>
+              </tr>
+            ) : (
+              paginatedData.map((book, index) => {
               const status = getStatus(book.stok);
               const coverColor = coverColors[book.kategori] || 'bg-[#9CA3AF]';
               return (
                 <tr
                   key={book.id}
-                  className={index !== filteredBooks.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
+                  className={index !== paginatedData.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-9 h-12 rounded-md flex items-center justify-center shrink-0 ${coverColor}`}
+                        className={`w-9 h-12 rounded-md shrink-0 overflow-hidden ${book.cover ? '' : `flex items-center justify-center ${coverColor}`}`}
                       >
-                        <BookOpen size={16} className="text-white/70" />
+                        {book.cover ? (
+                          <img src={book.cover} alt={book.judul} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[9px] text-white/60">Cover</span>
+                        )}
                       </div>
                       <div>
                         <p className="text-[14px] font-semibold text-[#111827]">
@@ -203,38 +233,17 @@ export default function BukuPage() {
                   </td>
                 </tr>
               );
-            })}
+              })
+            )}
           </tbody>
         </table>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB]">
-          <p className="text-[13px] text-[#585F6C]">
-            Menampilkan {filteredBooks.length} dari {books.length} buku
-          </p>
-          <div className="flex items-center gap-1.5">
-            <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#9CA3AF] hover:bg-[#F9FAFB]">
-              <ChevronLeft size={16} />
-            </button>
-            {[1, 2, 3].map((p) => (
-              <button
-                key={p}
-                className={`w-8 h-8 rounded-md text-[13px] font-semibold ${
-                  p === 1 ? 'bg-[#B45309] text-white' : 'text-[#585F6C] hover:bg-[#F9FAFB]'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <span className="text-[#9CA3AF] px-1">...</span>
-            <button className="w-8 h-8 rounded-md text-[13px] font-semibold text-[#585F6C] hover:bg-[#F9FAFB]">
-              125
-            </button>
-            <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredBooks.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

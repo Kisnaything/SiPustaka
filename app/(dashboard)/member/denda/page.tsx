@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
-import { updatePeminjaman } from '@/lib/data/peminjaman'; // nanti kita buat fungsi ini
+import { updatePeminjaman } from '@/lib/data/peminjaman';
+import { supabase } from '@/lib/supabase/client';
+import Pagination from '@/components/Pagination';
 
 const tabs = ['Semua', 'Belum Lunas', 'Menunggu Verifikasi', 'Lunas', 'Ditolak'];
 
@@ -41,9 +43,19 @@ export default function DendaPage() {
   const [activeTab, setActiveTab] = useState('Semua');
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
 
   // Filter peminjaman yang sudah selesai dan punya denda > 0
-  const dendaList = allPeminjaman
+  const myPeminjaman = userId ? allPeminjaman.filter((p) => p.anggota_id === userId) : [];
+  const dendaList = myPeminjaman
     .filter((p) => p.status === 'Selesai' && p.denda > 0)
     .map((p) => ({
       id: p.id,
@@ -67,6 +79,16 @@ export default function DendaPage() {
     if (activeTab === 'Semua') return true;
     return d.status === activeTab;
   });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const totalBelumLunas = dendaList
     .filter((d) => d.status === 'Belum Lunas' || d.status === 'Ditolak')
@@ -212,7 +234,7 @@ export default function DendaPage() {
             </p>
           </div>
         ) : (
-          filtered.map((item, i) => {
+          paginatedData.map((item, i) => {
             const belumLunas = item.status === 'Belum Lunas';
             const ditolak = item.status === 'Ditolak';
             const perluUpload = belumLunas || ditolak;
@@ -225,7 +247,7 @@ export default function DendaPage() {
                     gridTemplateColumns: '2fr 130px 140px 120px 160px 140px',
                     padding: '16px 20px',
                     borderBottom:
-                      i < filtered.length - 1 && !item.pesanDitolak
+                      i < paginatedData.length - 1 && !item.pesanDitolak
                         ? '1px solid #E5E7EB'
                         : 'none',
                     alignItems: 'center',
@@ -357,7 +379,7 @@ export default function DendaPage() {
                     style={{
                       padding: '8px 20px 14px',
                       borderBottom:
-                        i < filtered.length - 1 ? '1px solid #E5E7EB' : 'none',
+                        i < paginatedData.length - 1 ? '1px solid #E5E7EB' : 'none',
                       borderLeft: '3px solid transparent',
                     }}
                   >
@@ -387,6 +409,13 @@ export default function DendaPage() {
           })
         )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

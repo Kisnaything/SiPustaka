@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -12,14 +12,19 @@ import {
   Search,
 } from 'lucide-react';
 import { usePeminjamanAktif } from '@/lib/hooks/usePeminjaman';
+import { usePengaturan } from '@/lib/hooks/usePengaturan';
 import { selesaikanPeminjaman } from '@/lib/data/peminjaman';
+import Pagination from '@/components/Pagination';
 
 export default function PengembalianPage() {
   const aktifList = usePeminjamanAktif();
+  const pengaturan = usePengaturan();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null
   );
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const handleKonfirmasiKembali = async (id: string) => {
     if (!confirm('Yakin buku ini sudah dikembalikan?')) return;
@@ -46,6 +51,16 @@ export default function PengembalianPage() {
       p.anggota_nama.toLowerCase().includes(search.toLowerCase()) ||
       p.buku_judul.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   // Hitung statistik
   const totalAktif = aktifList.length;
@@ -112,7 +127,7 @@ export default function PengembalianPage() {
                   const days = Math.ceil(
                     (now.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24)
                   );
-                  return sum + days * 2000;
+                  return sum + days * (pengaturan.denda_per_hari || 2000);
                 }
                 return sum;
               }, 0)
@@ -159,7 +174,7 @@ export default function PengembalianPage() {
             </p>
           </div>
         ) : (
-          filtered.map((peminjaman) => {
+          paginatedData.map((peminjaman) => {
             const isTerlambat =
               peminjaman.jatuh_tempo && new Date(peminjaman.jatuh_tempo) < new Date();
             const hariTerlambat = isTerlambat
@@ -168,7 +183,7 @@ export default function PengembalianPage() {
                     (1000 * 60 * 60 * 24)
                 )
               : 0;
-            const estimasiDenda = hariTerlambat * 2000;
+            const estimasiDenda = hariTerlambat * (pengaturan.denda_per_hari || 2000);
 
             return (
               <div
@@ -267,6 +282,13 @@ export default function PengembalianPage() {
           })
         )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

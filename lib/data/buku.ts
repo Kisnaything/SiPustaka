@@ -8,6 +8,8 @@ export interface Buku {
   cetakan: string
   isbn: string
   stok: number
+  kode_rak: string
+  kondisi: string
   cover: string | null
   preview: string | null
   sinopsis: string

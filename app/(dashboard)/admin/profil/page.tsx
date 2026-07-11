@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User,
@@ -72,14 +72,11 @@ export default function ProfilPage() {
 
   const [namaPerpustakaan, setNamaPerpustakaan] = useState(pengaturan.nama_perpustakaan);
   const [dendaPerHari, setDendaPerHari] = useState(pengaturan.denda_per_hari);
-  const [durasiPinjam, setDurasiPinjam] = useState(pengaturan.durasi_pinjam);
-
   const handleSimpanKonfigurasi = async () => {
     try {
       await updatePengaturan({
         nama_perpustakaan: namaPerpustakaan,
         denda_per_hari: dendaPerHari,
-        durasi_pinjam: durasiPinjam,
       })
       alert('Konfigurasi berhasil disimpan!')
     } catch {
@@ -115,6 +112,24 @@ export default function ProfilPage() {
     router.push('/login')
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      await supabase.auth.updateUser({ data: { foto_profil: dataUrl } });
+      alert('Foto profil berhasil diperbarui!');
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-40 text-[14px] text-[#9CA3AF]">
@@ -146,9 +161,16 @@ export default function ProfilPage() {
                 <div className="w-16 h-16 rounded-full bg-[#FEF3DC] flex items-center justify-center text-[#B45309] text-xl font-bold">
                   {inisial}
                 </div>
-                <button className="absolute -bottom-1 -right-1 p-1 bg-white rounded-full border border-[#E5E7EB] hover:bg-[#F9FAFB]">
+                <button onClick={handleFotoClick} className="absolute -bottom-1 -right-1 p-1 bg-white rounded-full border border-[#E5E7EB] hover:bg-[#F9FAFB]">
                   <Camera size={14} className="text-[#585F6C]" />
                 </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFotoChange}
+                />
               </div>
               <div>
                 <p className="text-[15px] font-bold text-[#111827]">{nama}</p>
@@ -216,25 +238,20 @@ export default function ProfilPage() {
                 />
                 <p className="text-[12px] text-[#9CA3AF] mt-1">Diberlakukan untuk setiap keterlambatan buku.</p>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-[#374151]">Durasi Pinjam Maksimal (Hari)</label>
-                <input
-                  type="number"
-                  value={durasiPinjam}
-                  onChange={(e) => setDurasiPinjam(Number(e.target.value))}
-                  className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
-                />
-                <p className="text-[12px] text-[#9CA3AF] mt-1">Standar waktu peminjaman untuk semua anggota.</p>
-              </div>
-
               <div className="bg-[#FEF9C3] border border-[#FDE047] rounded-lg p-3 text-[13px] text-[#854D0E]">
                 <AlertCircle size={16} className="inline mr-1.5" />
-                Perubahan pada denda dan durasi akan langsung berdampak pada seluruh transaksi peminjaman baru
+                Perubahan pada denda akan langsung berdampak pada seluruh transaksi peminjaman baru
                 yang dilakukan setelah penyimpanan.
               </div>
 
               <div className="flex gap-3">
-                <button className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">
+                <button
+                  onClick={() => {
+                    setNamaPerpustakaan(pengaturan.nama_perpustakaan);
+                    setDendaPerHari(pengaturan.denda_per_hari);
+                  }}
+                  className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors"
+                >
                   Batalkan
                 </button>
                 <button

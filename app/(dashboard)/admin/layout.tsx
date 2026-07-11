@@ -123,6 +123,12 @@ function Topbar({ onNotifClick, adminName, adminInitials }: { onNotifClick: () =
         <input
           className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg pl-9 pr-4 py-2.5 text-[14px] text-[#111827] placeholder:text-[#6B7280] outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20"
           placeholder="Cari buku, anggota, atau laporan..."
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const val = (e.target as HTMLInputElement).value.trim();
+              if (val) window.location.href = `/admin/buku?search=${encodeURIComponent(val)}`;
+            }
+          }}
         />
       </div>
 
@@ -130,7 +136,6 @@ function Topbar({ onNotifClick, adminName, adminInitials }: { onNotifClick: () =
       <div className="ml-auto flex items-center gap-4">
         <button onClick={onNotifClick} className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100/50 transition-colors">
           <Bell size={20} className="text-[#524534]" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-[#DC2626] rounded-full border-2 border-white" />
         </button>
         <div className="flex items-center gap-3 pl-4 border-l border-[#E5E7EB]">
           <div className="text-right">

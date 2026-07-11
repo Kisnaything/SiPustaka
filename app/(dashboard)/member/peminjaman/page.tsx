@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
+import Pagination from '@/components/Pagination';
 
 const tabs = ['Semua', 'Aktif', 'Menunggu Verifikasi', 'Selesai', 'Terlambat'];
 
@@ -49,6 +50,8 @@ export default function PeminjamanPage() {
   const allPeminjaman = usePeminjaman();
   const [activeTab, setActiveTab] = useState('Semua');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const filtered = allPeminjaman.filter((p) => {
     const displayStatus = statusMap[p.status] || p.status;
@@ -64,6 +67,16 @@ export default function PeminjamanPage() {
 
     return matchTab && matchSearch;
   });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedData = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeTab]);
 
   return (
     <div
@@ -230,7 +243,7 @@ export default function PeminjamanPage() {
             </p>
           </div>
         ) : (
-          filtered.map((item) => {
+          paginatedData.map((item, idx) => {
             const displayStatus = statusMap[item.status] || item.status;
             const isTerlambat =
               item.status === 'Aktif' &&
@@ -247,7 +260,7 @@ export default function PeminjamanPage() {
                   gridTemplateColumns: '180px 1fr 140px 140px 160px 80px',
                   padding: '16px 20px',
                   borderBottom:
-                    filtered.indexOf(item) < filtered.length - 1 ? '1px solid #E5E7EB' : 'none',
+                    idx < paginatedData.length - 1 ? '1px solid #E5E7EB' : 'none',
                   alignItems: 'center',
                   transition: 'background-color 0.15s',
                 }}
@@ -349,68 +362,12 @@ export default function PeminjamanPage() {
           })
         )}
 
-        {/* Pagination */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            padding: '12px 20px',
-            borderTop: filtered.length > 0 ? '1px solid #E5E7EB' : 'none',
-            gap: '4px',
-          }}
-        >
-          <button
-            style={{
-              width: '28px',
-              height: '28px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '6px',
-              backgroundColor: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#6B7280',
-            }}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-          </button>
-          <button
-            style={{
-              width: '28px',
-              height: '28px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '6px',
-              backgroundColor: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#6B7280',
-            }}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-          </button>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

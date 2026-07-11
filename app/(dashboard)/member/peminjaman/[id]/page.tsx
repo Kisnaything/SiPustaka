@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { usePeminjamanById } from '@/lib/hooks/usePeminjaman';
+import { usePengaturan } from '@/lib/hooks/usePengaturan';
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
   'Aktif': { bg: '#DCFCE7', color: '#15803D' },
@@ -50,6 +51,7 @@ export default function DetailPeminjamanPage() {
   const params = useParams();
   const id = params.id as string;
   const data = usePeminjamanById(id);
+  const pengaturan = usePengaturan();
 
   if (!data) {
     return (
@@ -82,7 +84,7 @@ export default function DetailPeminjamanPage() {
     const now = new Date();
     if (now > jatuhTempo) {
       hariTerlambat = Math.ceil((now.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24));
-      totalDenda = hariTerlambat * 2000; // Rp 2.000/hari
+      totalDenda = hariTerlambat * (pengaturan.denda_per_hari || 2000);
     }
   }
 
@@ -368,6 +370,61 @@ export default function DetailPeminjamanPage() {
           </div>
         </div>
       </div>
+
+      {/* Bukti Bayar Denda */}
+      {data.status === 'Selesai' && data.denda > 0 && (
+        <div style={{ marginBottom: '28px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111827', margin: '0 0 16px' }}>
+            Pembayaran Denda
+          </h2>
+          <div style={{
+            border: '1px solid #E5E7EB', borderRadius: '12px', padding: '20px 24px',
+            backgroundColor: '#FFFFFF', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '14px', color: '#6B7280' }}>Status Denda</span>
+              <span style={{
+                fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '999px',
+                backgroundColor: data.status_denda === 'Lunas' ? '#DCFCE7' :
+                  data.status_denda === 'Menunggu Verifikasi' ? '#FEF9C3' :
+                  data.status_denda === 'Ditolak' ? '#FEE2E2' : '#FEE2E2',
+                color: data.status_denda === 'Lunas' ? '#15803D' :
+                  data.status_denda === 'Menunggu Verifikasi' ? '#854D0E' :
+                  data.status_denda === 'Ditolak' ? '#DC2626' : '#DC2626',
+              }}>
+                {data.status_denda || 'Belum Lunas'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '14px', color: '#6B7280' }}>Jumlah Denda</span>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626' }}>
+                Rp {data.denda.toLocaleString('id-ID')}
+              </span>
+            </div>
+            {data.bukti_bayar && (
+              <div style={{ marginTop: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#6B7280', display: 'block', marginBottom: '8px' }}>
+                  Bukti Pembayaran
+                </span>
+                <a href={data.bukti_bayar} target="_blank" rel="noopener noreferrer">
+                  <img src={data.bukti_bayar} alt="Bukti Pembayaran" style={{
+                    maxWidth: '100%', maxHeight: '300px', borderRadius: '8px',
+                    border: '1px solid #E5E7EB', cursor: 'pointer',
+                  }} />
+                </a>
+              </div>
+            )}
+            {data.pesan_ditolak && (
+              <div style={{
+                marginTop: '12px', padding: '10px 14px', backgroundColor: '#FEE2E2',
+                borderRadius: '8px', fontSize: '13px', color: '#DC2626',
+              }}>
+                Alasan ditolak: {data.pesan_ditolak}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Divider */}
       <div style={{ borderTop: '1px solid #E5E7EB', marginBottom: '28px' }} />

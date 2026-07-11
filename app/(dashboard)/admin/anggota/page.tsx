@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   UserPlus,
   Users,
@@ -10,13 +10,13 @@ import {
   UserCheck,
   Filter,
   Download,
-  ChevronLeft,
-  ChevronRight,
   Pencil,
   Trash2,
 } from 'lucide-react';
 import { useAnggota } from '@/lib/hooks/useAnggota';
+import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
 import { deleteAnggota } from '@/lib/data/anggota';
+import Pagination from '@/components/Pagination';
 
 type Status = 'AKTIF' | 'NON-AKTIF';
 
@@ -24,8 +24,10 @@ const avatarColors = ['#93C5FD', '#F9A8D4', '#78350F', '#6EE7B7', '#FCD34D', '#F
 
 export default function AnggotaPage() {
   const { anggota, loading } = useAnggota();
+  const allPeminjaman = usePeminjaman();
   const [search, setSearch] = useState('');
-  const page = 1;
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Hitung statistik
   const totalAnggota = anggota.length;
@@ -56,7 +58,7 @@ export default function AnggotaPage() {
     },
     {
       label: 'Terlambat Kembali',
-      value: '0', // Nanti kita hitung dari peminjaman
+      value: allPeminjaman.filter((p) => p.status === 'Aktif' && p.jatuh_tempo && new Date(p.jatuh_tempo) < new Date()).length.toString(),
       valueColor: 'text-[#DC2626]',
       icon: AlertCircle,
       iconBg: 'bg-[#FEE2E2]',
@@ -87,6 +89,37 @@ export default function AnggotaPage() {
     a.email.toLowerCase().includes(search.toLowerCase()) ||
     a.id.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredAnggota.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredAnggota.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const handleDownloadCSV = () => {
+    const headers = ['Nama', 'Email', 'Telepon', 'Instansi', 'Tanggal Daftar', 'Status', 'Total Pinjaman'];
+    const rows = filteredAnggota.map((a) => [
+      a.nama,
+      a.email,
+      a.telepon || '-',
+      a.instansi || '-',
+      new Date(a.tanggal_daftar).toLocaleDateString('id-ID'),
+      a.status,
+      (a.total_pinjaman || 0).toString(),
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `anggota_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return <div className="p-6 text-[#585F6C]">Loading...</div>;
@@ -161,7 +194,7 @@ export default function AnggotaPage() {
             <button className="p-2 rounded-lg border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
               <Filter size={16} />
             </button>
-            <button className="p-2 rounded-lg border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
+            <button onClick={handleDownloadCSV} className="p-2 rounded-lg border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
               <Download size={16} />
             </button>
           </div>
@@ -201,12 +234,12 @@ export default function AnggotaPage() {
                 </td>
               </tr>
             ) : (
-              filteredAnggota.map((member, i) => {
+              paginatedData.map((member, i) => {
                 const avatarBg = avatarColors[i % avatarColors.length];
                 return (
                   <tr
                     key={member.id}
-                    className={i !== filteredAnggota.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
+                    className={i !== paginatedData.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -272,22 +305,12 @@ export default function AnggotaPage() {
           </tbody>
         </table>
 
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB]">
-          <p className="text-[13px] text-[#585F6C]">
-            Menampilkan {filteredAnggota.length} dari {totalAnggota} anggota
-          </p>
-          <div className="flex items-center gap-1.5">
-            <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#9CA3AF] hover:bg-[#F9FAFB]">
-              <ChevronLeft size={16} />
-            </button>
-            <button className="w-8 h-8 rounded-md text-[13px] font-semibold bg-[#B45309] text-white">
-              1
-            </button>
-            <button className="p-1.5 rounded-md border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredAnggota.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

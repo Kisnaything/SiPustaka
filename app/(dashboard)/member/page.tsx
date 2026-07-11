@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman'
+import Pagination from '@/components/Pagination'
 
 function buatNomorAnggota(id: string) {
   return 'M-' + id.slice(0, 8).toUpperCase()
@@ -58,6 +59,8 @@ export default function DashboardPage() {
   const [nomorAnggota, setNomorAnggota] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
   const allPeminjaman = usePeminjaman()
 
@@ -76,6 +79,16 @@ export default function DashboardPage() {
 
   const myPeminjaman = allPeminjaman.filter((p) => p.anggota_id === userId)
   const peminjamanAktif = myPeminjaman.filter((p) => p.status === 'Aktif' || p.status === 'Menunggu Konfirmasi')
+  const totalPages = Math.ceil(peminjamanAktif.length / ITEMS_PER_PAGE)
+  const paginatedData = peminjamanAktif.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [peminjamanAktif.length])
+
   const bukuDipinjam = peminjamanAktif.length
 
   const sortedByJatuhTempo = [...myPeminjaman]
@@ -289,7 +302,7 @@ export default function DashboardPage() {
               <p style={{ fontSize: '14px', margin: 0 }}>Tidak ada peminjaman aktif.</p>
             </div>
           ) : (
-            peminjamanAktif.map((item, i) => {
+            paginatedData.map((item, i) => {
               const display = getDisplayStatus(item)
               return (
                 <div
@@ -298,7 +311,7 @@ export default function DashboardPage() {
                     display: 'grid',
                     gridTemplateColumns: '2fr 1fr 1fr 1fr 60px',
                     padding: '16px 20px',
-                    borderBottom: i < peminjamanAktif.length - 1 ? '1px solid #E5E7EB' : 'none',
+                    borderBottom: i < paginatedData.length - 1 ? '1px solid #E5E7EB' : 'none',
                     alignItems: 'center',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FFFBF0')}
@@ -348,6 +361,13 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={peminjamanAktif.length}
+        onPageChange={setCurrentPage}
+      />
     </div>
   )
 }

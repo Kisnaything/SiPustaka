@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import { usePeminjaman } from '@/lib/hooks/usePeminjaman'
 
 function getInisial(nama: string) {
   const parts = nama.trim().split(' ')
@@ -62,6 +63,16 @@ export default function ProfilPage() {
     }
     load()
   }, [])
+
+  const allPeminjaman = usePeminjaman()
+  const myPeminjaman = allPeminjaman.filter((p) => p.anggota_id === metadata.id)
+  const bukuDipinjam = myPeminjaman.filter(
+    (p) => p.status === 'Aktif' || p.status === 'Menunggu Konfirmasi'
+  ).length
+  const totalPeminjaman = myPeminjaman.length
+  const totalDendaDibayar = myPeminjaman
+    .filter((p) => p.status_denda === 'Lunas')
+    .reduce((sum, p) => sum + p.denda, 0)
 
   const handleEdit = () => {
     setFormTemp(form)
@@ -157,9 +168,9 @@ export default function ProfilPage() {
         marginBottom: '28px',
       }}>
         {[
-          { label: 'TOTAL BUKU DIPINJAM', value: 0 },
-          { label: 'TOTAL PEMINJAMAN', value: 0 },
-          { label: 'TOTAL DENDA DIBAYAR', value: 'Rp 0' },
+          { label: 'TOTAL BUKU DIPINJAM', value: bukuDipinjam },
+          { label: 'TOTAL PEMINJAMAN', value: totalPeminjaman },
+          { label: 'TOTAL DENDA DIBAYAR', value: totalDendaDibayar > 0 ? `Rp ${totalDendaDibayar.toLocaleString('id-ID')}` : 'Rp 0' },
         ].map((stat) => (
           <div key={stat.label} style={{
             border: '1px solid #E5E7EB',

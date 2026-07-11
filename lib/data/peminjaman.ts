@@ -120,12 +120,15 @@ export async function addPeminjaman(data: {
   buku_judul: string
 }): Promise<{ success: boolean; message: string; data?: Peminjaman }> {
   try {
-    const aktif = await getPeminjamanByAnggota(data.anggota_id)
+    const semua = await getPeminjamanByAnggota(data.anggota_id)
+    const peminjamanBerjalan = semua.filter(
+      (p) => p.status === 'Aktif' || p.status === 'Menunggu Konfirmasi'
+    )
     const MAKS_PINJAM_ANGGOTA = 3
-    if (aktif.length >= MAKS_PINJAM_ANGGOTA) {
+    if (peminjamanBerjalan.length >= MAKS_PINJAM_ANGGOTA) {
       return {
         success: false,
-        message: `Anggota sudah mencapai batas maksimal ${MAKS_PINJAM_ANGGOTA} buku.`,
+        message: `Kamu sudah memiliki ${peminjamanBerjalan.length} peminjaman aktif. Maksimal ${MAKS_PINJAM_ANGGOTA} peminjaman aktif per anggota.`,
       }
     }
 

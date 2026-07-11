@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   FileText,
   Download,
@@ -17,6 +17,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
+import Pagination from '@/components/Pagination';
 
 type StatusFilter = 'Semua' | 'Aktif' | 'Selesai' | 'Dibatalkan' | 'Menunggu Konfirmasi';
 
@@ -33,6 +34,8 @@ export default function LaporanPage() {
     return new Date().toISOString().split('T')[0];
   });
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Semua');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // ─── Filter Data ───
   const filteredData = useMemo(() => {
@@ -51,6 +54,16 @@ export default function LaporanPage() {
       return matchDate && matchStatus;
     });
   }, [allPeminjaman, startDate, endDate, statusFilter]);
+
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate, statusFilter]);
 
   // ─── Statistik ───
   const stats = useMemo(() => {
@@ -224,7 +237,7 @@ export default function LaporanPage() {
                   </td>
                 </tr>
               ) : (
-                filteredData.slice(0, 10).map((p, i) => {
+                paginatedData.map((p, i) => {
                   const statusColor = {
                     'Aktif': 'bg-[#DCFCE7] text-[#16A34A]',
                     'Selesai': 'bg-[#F3F4F6] text-[#6B7280]',
@@ -277,17 +290,12 @@ export default function LaporanPage() {
           </table>
         </div>
 
-        {/* Pagination Info */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB]">
-          <p className="text-[13px] text-[#585F6C]">
-            Menampilkan {Math.min(filteredData.length, 10)} dari {filteredData.length} transaksi
-          </p>
-          {filteredData.length > 10 && (
-            <button className="text-[13px] font-medium text-[#B45309] hover:underline">
-              Tampilkan Lebih Banyak ▼
-            </button>
-          )}
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* ─── Grafik Tren ─── */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   CheckCircle,
@@ -13,11 +13,14 @@ import {
 } from 'lucide-react';
 import { usePeminjamanMenunggu, usePeminjamanAktif } from '@/lib/hooks/usePeminjaman';
 import { konfirmasiPengambilan, batalkanPeminjaman } from '@/lib/data/peminjaman';
+import Pagination from '@/components/Pagination';
 
 export default function PeminjamanPage() {
   const [kodeInput, setKodeInput] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'menunggu' | 'aktif'>('menunggu');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const menungguList = usePeminjamanMenunggu();
   const aktifList = usePeminjamanAktif();
@@ -62,6 +65,15 @@ export default function PeminjamanPage() {
   };
 
   const currentList = activeTab === 'menunggu' ? menungguList : aktifList;
+  const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
+  const paginatedData = currentList.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const getSisaWaktu = (tanggalReservasi: string) => {
     const reservasi = new Date(tanggalReservasi);
@@ -159,7 +171,7 @@ export default function PeminjamanPage() {
             </p>
           </div>
         ) : (
-          currentList.map((peminjaman) => {
+          paginatedData.map((peminjaman) => {
             const isExpired = getSisaWaktu(peminjaman.tanggal_reservasi) === 'Habis';
             return (
               <div
@@ -245,6 +257,13 @@ export default function PeminjamanPage() {
           })
         )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={currentList.length}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

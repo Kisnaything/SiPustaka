@@ -45,6 +45,9 @@ export default function DendaPage() {
   const [norek, setNorek] = useState('');
   const [activeTab, setActiveTab] = useState('Semua');
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
+  const [uploadMessages, setUploadMessages] = useState<Record<string, string>>({});
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -119,9 +122,10 @@ export default function DendaPage() {
       });
       if (result) {
         setUploadedFiles((prev) => ({ ...prev, [id]: file }));
-        alert(`Bukti "${file.name}" berhasil diupload. Menunggu verifikasi admin.`);
+        setPreviewUrls((prev) => ({ ...prev, [id]: dataUrl }));
+        setUploadMessages((prev) => ({ ...prev, [id]: '✓ Bukti berhasil diupload. Menunggu verifikasi admin.' }));
       } else {
-        alert('Gagal mengupload bukti. Silakan coba lagi.');
+        setUploadMessages((prev) => ({ ...prev, [id]: '✗ Gagal mengupload bukti. Silakan coba lagi.' }));
       }
     };
     reader.readAsDataURL(file);
@@ -325,7 +329,7 @@ export default function DendaPage() {
                     <Badge status={item.status} />
                   </div>
 
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {perluUpload ? (
                       <>
                         <input
@@ -373,27 +377,48 @@ export default function DendaPage() {
                           </svg>
                           Upload Bukti
                         </button>
-                        {uploadedFiles[item.id] && (
-                          <p style={{ fontSize: '11px', color: '#16A34A', margin: '4px 0 0' }}>
-                            ✓ {uploadedFiles[item.id]?.name}
-                          </p>
+
+                        {(previewUrls[item.id] || item.buktiBayar) && (
+                          <img
+                            src={previewUrls[item.id] || item.buktiBayar!}
+                            onClick={() => setPreviewUrl(previewUrls[item.id] || item.buktiBayar!)}
+                            style={{
+                              height: '40px',
+                              width: 'fit-content',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              border: '1px solid #E5E7EB',
+                              objectFit: 'cover',
+                            }}
+                            alt="Preview bukti"
+                          />
+                        )}
+
+                        {uploadMessages[item.id] && (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            color: uploadMessages[item.id].startsWith('✓') ? '#16A34A' : '#DC2626',
+                            lineHeight: 1.3,
+                          }}>
+                            {uploadMessages[item.id]}
+                          </span>
                         )}
                       </>
                     ) : item.buktiBayar ? (
-                      <a
-                        href={item.buktiBayar}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <img
+                        src={item.buktiBayar}
+                        onClick={() => setPreviewUrl(item.buktiBayar)}
                         style={{
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#D4891A',
+                          height: '40px',
+                          width: 'fit-content',
+                          borderRadius: '6px',
                           cursor: 'pointer',
-                          textDecoration: 'underline',
+                          border: '1px solid #E5E7EB',
+                          objectFit: 'cover',
                         }}
-                      >
-                        Lihat Bukti
-                      </a>
+                        alt="Bukti pembayaran"
+                      />
                     ) : (
                       <span
                         style={{
@@ -452,6 +477,28 @@ export default function DendaPage() {
         totalItems={filtered.length}
         onPageChange={setCurrentPage}
       />
+
+      {previewUrl && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999, padding: '24px', cursor: 'pointer',
+          }}
+          onClick={() => setPreviewUrl(null)}
+        >
+          <img
+            src={previewUrl}
+            style={{
+              maxWidth: '90vw', maxHeight: '90vh',
+              borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              objectFit: 'contain', cursor: 'default',
+            }}
+            onClick={(e) => e.stopPropagation()}
+            alt="Preview bukti pembayaran"
+          />
+        </div>
+      )}
     </div>
   );
 }

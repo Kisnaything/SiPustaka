@@ -34,6 +34,7 @@ export default function VerifikasiPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null
   );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -274,15 +275,12 @@ export default function VerifikasiPage() {
                         Rp {totalDenda.toLocaleString('id-ID')}
                       </span>
                       {peminjaman.bukti_bayar && (
-                        <a
-                          href={peminjaman.bukti_bayar}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <img src={peminjaman.bukti_bayar} alt="Bukti Pembayaran"
-                            className="h-20 rounded-lg border border-[#E5E7EB] hover:opacity-80 transition-opacity"
-                          />
-                        </a>
+                        <img
+                          src={peminjaman.bukti_bayar}
+                          alt="Bukti Pembayaran"
+                          onClick={() => setPreviewUrl(peminjaman.bukti_bayar!)}
+                          className="h-20 rounded-lg border border-[#E5E7EB] hover:opacity-80 transition-opacity cursor-pointer"
+                        />
                       )}
                     </div>
                   </div>
@@ -386,6 +384,20 @@ export default function VerifikasiPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <img
+            src={previewUrl}
+            alt="Preview Bukti Pembayaran"
+            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

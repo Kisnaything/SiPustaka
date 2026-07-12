@@ -107,7 +107,7 @@ export default function PeminjamanPage() {
           Scan atau input kode peminjaman yang diberikan oleh anggota.
         </p>
 
-        <form onSubmit={handleScan} className="flex items-center gap-3 mt-4">
+        <form onSubmit={handleScan} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
           <input
             value={kodeInput}
             onChange={(e) => setKodeInput(e.target.value)}

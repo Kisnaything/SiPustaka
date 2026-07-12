@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
 import { useMobile } from '@/lib/hooks/useMobile';
+import { supabase } from '@/lib/supabase/client';
 import Pagination from '@/components/Pagination';
 
 const tabs = ['Semua', 'Aktif', 'Menunggu Verifikasi', 'Selesai', 'Terlambat'];
@@ -54,8 +55,17 @@ export default function PeminjamanPage() {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const filtered = allPeminjaman.filter((p) => {
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
+
+  const myPeminjaman = userId ? allPeminjaman.filter((p) => p.anggota_id === userId) : [];
+
+  const filtered = myPeminjaman.filter((p) => {
     const displayStatus = statusMap[p.status] || p.status;
     const matchTab =
       activeTab === 'Semua' ||

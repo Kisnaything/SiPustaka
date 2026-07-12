@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useMobile } from '@/lib/hooks/useMobile';
 import {
   LayoutDashboard,
   BookOpen,
@@ -15,6 +16,7 @@ import {
   User,
   LogOut,
   Search,
+  Menu,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -46,14 +48,22 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
-function Sidebar({ active, onNav }: { active: Page; onNav: (p: Page) => void }) {
+function Sidebar({ active, onNav, isMobile, isOpen, onClose }: { active: Page; onNav: (p: Page) => void; isMobile: boolean; isOpen: boolean; onClose: () => void }) {
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#F9FAFB] border-r border-[#E5E7EB] flex flex-col z-50">
+    <aside
+      className={`bg-[#F9FAFB] border-r border-[#E5E7EB] flex flex-col ${
+        isMobile
+          ? `fixed top-0 left-0 h-screen w-[240px] z-50 transition-transform duration-300 ${
+              isOpen ? 'translate-x-0' : '-translate-x-full'
+            }`
+          : 'fixed top-0 left-0 h-screen w-[240px]'
+      }`}
+    >
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6">
         <div className="w-10 h-10 bg-[#F5A623] rounded-lg flex items-center justify-center flex-shrink-0">
@@ -72,7 +82,7 @@ function Sidebar({ active, onNav }: { active: Page; onNav: (p: Page) => void }) 
           return (
             <button
               key={item.id}
-              onClick={() => onNav(item.id)}
+              onClick={() => { onNav(item.id); if (isMobile) onClose(); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold transition-all ${
                 isActive
                   ? "bg-[#FEF3DC] text-[#835500] border-l-[3px] border-[#835500] pl-[13px]"
@@ -91,7 +101,7 @@ function Sidebar({ active, onNav }: { active: Page; onNav: (p: Page) => void }) 
       {/* Footer */}
       <div className="border-t border-[#E5E7EB] px-3 py-4 space-y-0.5">
         <button
-          onClick={() => onNav("profil")}
+          onClick={() => { onNav("profil"); if (isMobile) onClose(); }}
           className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold transition-all ${
             active === "profil"
               ? "bg-[#FEF3DC] text-[#835500]"
@@ -114,15 +124,25 @@ function Sidebar({ active, onNav }: { active: Page; onNav: (p: Page) => void }) 
 }
 
 // ─── Topbar ──────────────────────────────────────────────────────────────────
-function Topbar({ onNotifClick, adminName, adminInitials }: { onNotifClick: () => void; adminName: string; adminInitials: string }) {
+function Topbar({ onNotifClick, onMenuClick, adminName, adminInitials, isMobile }: { onNotifClick: () => void; onMenuClick: () => void; adminName: string; adminInitials: string; isMobile: boolean }) {
   return (
-    <header className="h-[75px] bg-[#FFF8F4] border-b border-[#E5E7EB] flex items-center px-6 sticky top-0 z-40">
+    <header className="h-[75px] bg-[#FFF8F4] border-b border-[#E5E7EB] flex items-center px-4 lg:px-6 sticky top-0 z-40">
+      {/* Mobile hamburger */}
+      {isMobile && (
+        <button
+          onClick={onMenuClick}
+          className="mr-3 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100/50 transition-colors"
+        >
+          <Menu size={20} className="text-[#524534]" />
+        </button>
+      )}
+
       {/* Search */}
-      <div className="flex-1 relative max-w-xl">
+      <div className={`relative ${isMobile ? 'flex-1 max-w-[160px] sm:max-w-xs' : 'flex-1 max-w-xl'}`}>
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
         <input
           className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg pl-9 pr-4 py-2.5 text-[14px] text-[#111827] placeholder:text-[#6B7280] outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20"
-          placeholder="Cari buku, anggota, atau laporan..."
+          placeholder={isMobile ? "Cari..." : "Cari buku, anggota, atau laporan..."}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               const val = (e.target as HTMLInputElement).value.trim();
@@ -133,12 +153,12 @@ function Topbar({ onNotifClick, adminName, adminInitials }: { onNotifClick: () =
       </div>
 
       {/* Right */}
-      <div className="ml-auto flex items-center gap-4">
+      <div className="ml-auto flex items-center gap-2 lg:gap-4">
         <button onClick={onNotifClick} className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100/50 transition-colors">
           <Bell size={20} className="text-[#524534]" />
         </button>
-        <div className="flex items-center gap-3 pl-4 border-l border-[#E5E7EB]">
-          <div className="text-right">
+        <div className="flex items-center gap-3 pl-3 lg:pl-4 border-l border-[#E5E7EB]">
+          <div className="text-right hidden sm:block">
             <p className="text-[13px] font-semibold text-[#111827] leading-tight">{adminName}</p>
             <p className="text-[12px] font-medium text-[#524534]">Super Admin</p>
           </div>
@@ -158,6 +178,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const [adminName, setAdminName] = useState("Admin");
   const [adminInitials, setAdminInitials] = useState("AD");
+  const isMobile = useMobile(1024);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
@@ -215,10 +237,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[#FFF8F4]">
-      <Sidebar active={getActivePage()} onNav={handleNav} />
-      <main className="ml-[240px] min-h-screen flex flex-col">
-        <Topbar onNotifClick={() => router.push("/admin/notifikasi")} adminName={adminName} adminInitials={adminInitials} />
-        <div className="flex-1 p-7">{children}</div>
+      {/* Mobile backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <Sidebar
+        active={getActivePage()}
+        onNav={handleNav}
+        isMobile={isMobile}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <main className={`${isMobile ? '' : 'ml-[240px]'} min-h-screen flex flex-col`}>
+        <Topbar
+          onNotifClick={() => router.push("/admin/notifikasi")}
+          onMenuClick={() => setSidebarOpen((v) => !v)}
+          adminName={adminName}
+          adminInitials={adminInitials}
+          isMobile={isMobile}
+        />
+        <div className="flex-1 p-4 lg:p-7">{children}</div>
       </main>
     </div>
   );

@@ -158,7 +158,7 @@ export default function LaporanPage() {
       </div>
 
       {/* ─── Stat Cards ─── */}
-      <div className="grid grid-cols-3 gap-4 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
           <div className="flex items-start justify-between">
             <div>

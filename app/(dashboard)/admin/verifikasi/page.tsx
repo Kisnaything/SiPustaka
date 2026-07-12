@@ -106,7 +106,7 @@ export default function VerifikasiPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
           <p className="text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide">
             Total Menunggu
@@ -203,7 +203,7 @@ export default function VerifikasiPage() {
                 key={peminjaman.id}
                 className="bg-white rounded-xl border border-[#E5E7EB] p-5 hover:shadow-sm transition-shadow"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex-1">
                     {/* Anggota */}
                     <div className="flex items-center gap-3 mb-2">
@@ -231,7 +231,7 @@ export default function VerifikasiPage() {
                     </div>
 
                     {/* Detail Buku & Denda */}
-                    <div className="grid grid-cols-3 gap-4 mt-3 bg-[#F9FAFB] rounded-lg p-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3 bg-[#F9FAFB] rounded-lg p-3">
                       <div className="flex items-center gap-2">
                         <BookOpen size={15} className="text-[#585F6C]" />
                         <span className="text-[14px] font-medium text-[#111827]">
@@ -268,7 +268,7 @@ export default function VerifikasiPage() {
                     </div>
 
                     {/* Total Denda */}
-                    <div className="mt-3 flex items-center gap-4">
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
                       <span className="text-[13px] font-medium text-[#585F6C]">Total Tagihan:</span>
                       <span className="text-[18px] font-bold text-[#DC2626]">
                         Rp {totalDenda.toLocaleString('id-ID')}
@@ -278,7 +278,6 @@ export default function VerifikasiPage() {
                           href={peminjaman.bukti_bayar}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block ml-2"
                         >
                           <img src={peminjaman.bukti_bayar} alt="Bukti Pembayaran"
                             className="h-20 rounded-lg border border-[#E5E7EB] hover:opacity-80 transition-opacity"
@@ -289,26 +288,26 @@ export default function VerifikasiPage() {
                   </div>
 
                   {/* Aksi / Status */}
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-start gap-2 ml-4 shrink-0">
                     {peminjaman.status_denda === 'Menunggu Verifikasi' ? (
                       <>
                         <button
                           onClick={() => handleOpenModal(peminjaman.id, 'tolak')}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg text-[13px] font-semibold transition-colors"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[#FEE2E2] hover:bg-[#FECACA] text-[#DC2626] rounded-lg text-[13px] font-semibold transition-colors whitespace-nowrap"
                         >
                           <XCircle size={15} />
                           Tolak
                         </button>
                         <button
                           onClick={() => handleOpenModal(peminjaman.id, 'setujui')}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-lg text-[13px] font-semibold transition-colors shadow-sm"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-lg text-[13px] font-semibold transition-colors shadow-sm whitespace-nowrap"
                         >
                           <CheckCircle size={15} />
-                          Setujui — Lunas
+                          Setujui
                         </button>
                       </>
                     ) : (
-                      <span className={`text-[12px] font-semibold px-3 py-1.5 rounded-full ${
+                      <span className={`text-[12px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap ${
                         peminjaman.status_denda === 'Lunas'
                           ? 'bg-[#DCFCE7] text-[#16A34A]'
                           : peminjaman.status_denda === 'Ditolak'

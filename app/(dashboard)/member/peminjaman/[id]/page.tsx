@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { usePeminjamanById } from '@/lib/hooks/usePeminjaman';
 import { usePengaturan } from '@/lib/hooks/usePengaturan';
 import { useMobile } from '@/lib/hooks/useMobile';
+import { supabase } from '@/lib/supabase/client';
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
   'Aktif': { bg: '#DCFCE7', color: '#15803D' },
@@ -54,6 +56,13 @@ export default function DetailPeminjamanPage() {
   const { data, loading } = usePeminjamanById(id);
   const pengaturan = usePengaturan();
   const isMobile = useMobile();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -73,6 +82,23 @@ export default function DetailPeminjamanPage() {
         }}
       >
         <p style={{ color: '#6B7280' }}>Data peminjaman tidak ditemukan.</p>
+        <Link href="/member/peminjaman" style={{ color: '#F5A623', fontSize: '14px' }}>
+          ← Kembali ke Peminjaman
+        </Link>
+      </div>
+    );
+  }
+
+  if (userId && data.anggota_id !== userId) {
+    return (
+      <div
+        style={{
+          padding: '48px',
+          textAlign: 'center',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        <p style={{ color: '#DC2626' }}>Akses ditolak. Ini bukan peminjaman Anda.</p>
         <Link href="/member/peminjaman" style={{ color: '#F5A623', fontSize: '14px' }}>
           ← Kembali ke Peminjaman
         </Link>

@@ -86,16 +86,16 @@ export default function BukuPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-[24px] font-bold text-[#111827]">Koleksi Buku</h1>
+          <h1 className="text-[20px] sm:text-[24px] font-bold text-[#111827]">Koleksi Buku</h1>
           <p className="text-[14px] text-[#585F6C] mt-1">
             Total {books.length} judul buku terdaftar dalam sistem.
           </p>
         </div>
         <Link
           href="/admin/buku/tambah"
-          className="flex items-center gap-2 bg-[#B45309] hover:bg-[#92400E] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm"
+          className="flex items-center gap-2 bg-[#B45309] hover:bg-[#92400E] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm shrink-0"
         >
           <Plus size={18} strokeWidth={2.5} />
           Tambah Buku Baru
@@ -103,8 +103,8 @@ export default function BukuPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3 bg-[#FFF8EE] border border-[#F3E5C8] rounded-xl px-4 py-3 mt-6">
-        <div className="flex items-center gap-2 flex-1 bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-[#FFF8EE] border border-[#F3E5C8] rounded-xl px-4 py-3 mt-6">
+        <div className="flex items-center gap-2 flex-1 w-full sm:w-auto bg-white border border-[#E5E7EB] rounded-lg px-3 py-2.5">
           <Search size={16} className="text-[#9CA3AF]" />
           <input
             value={search}
@@ -140,25 +140,26 @@ export default function BukuPage() {
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] mt-4 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Judul &amp; Penulis
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 ISBN
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Kategori
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Stok
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Status
               </th>
-              <th className="text-right text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-right text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Aksi
               </th>
             </tr>
@@ -175,68 +176,69 @@ export default function BukuPage() {
               const status = getStatus(book.stok);
               const coverColor = coverColors[book.kategori] || 'bg-[#9CA3AF]';
               return (
-                <tr
-                  key={book.id}
-                  className={index !== paginatedData.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-9 h-12 rounded-md shrink-0 overflow-hidden ${book.cover ? '' : `flex items-center justify-center ${coverColor}`}`}
-                      >
-                        {book.cover ? (
-                          <img src={book.cover} alt={book.judul} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[9px] text-white/60">Cover</span>
-                        )}
+                  <tr
+                    key={book.id}
+                    className={index !== paginatedData.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
+                  >
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-12 rounded-md shrink-0 overflow-hidden ${book.cover ? '' : `flex items-center justify-center ${coverColor}`}`}
+                        >
+                          {book.cover ? (
+                            <img src={book.cover} alt={book.judul} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[9px] text-white/60">Cover</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[13px] sm:text-[14px] font-semibold text-[#111827] truncate max-w-[150px] sm:max-w-none">
+                            {book.judul}
+                          </p>
+                          <p className="text-[12px] sm:text-[13px] text-[#585F6C]">{book.penulis}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[14px] font-semibold text-[#111827]">
-                          {book.judul}
-                        </p>
-                        <p className="text-[13px] text-[#585F6C]">{book.penulis}</p>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] text-[#585F6C] whitespace-nowrap">{book.isbn}</td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className="text-[12px] font-medium text-[#2563EB] bg-[#DBEAFE] px-2.5 py-1 rounded-md whitespace-nowrap">
+                        {book.kategori}
+                      </span>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] font-semibold text-[#111827]">
+                      {book.stok}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${statusStyles[status]}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[status]}`} />
+                        {status}
+                      </span>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/buku/edit/${book.id}`}
+                          className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
+                        >
+                          <Pencil size={15} />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(book.id)}
+                          className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]"
+                        >
+                          <Trash2 size={15} />
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-[14px] text-[#585F6C]">{book.isbn}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-[12px] font-medium text-[#2563EB] bg-[#DBEAFE] px-2.5 py-1 rounded-md">
-                      {book.kategori}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-[14px] font-semibold text-[#111827]">
-                    {book.stok}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full ${statusStyles[status]}`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[status]}`} />
-                      {status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/admin/buku/edit/${book.id}`}
-                        className="p-1.5 rounded-md hover:bg-[#F3F4F6] text-[#585F6C]"
-                      >
-                        <Pencil size={15} />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(book.id)}
-                        className="p-1.5 rounded-md hover:bg-[#FEE2E2] text-[#DC2626]"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
               );
               })
             )}
           </tbody>
         </table>
+        </div>
 
         <Pagination
           currentPage={currentPage}

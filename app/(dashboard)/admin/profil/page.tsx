@@ -44,6 +44,8 @@ export default function ProfilPage() {
   const [passwordUlangi, setPasswordUlangi] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [norek, setNorek] = useState('');
+
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -55,6 +57,11 @@ export default function ProfilPage() {
       setTelepon(meta.telepon || '')
       setUsername(meta.username || '')
       setLoading(false)
+
+      // Load norek from auth user metadata
+      const norekRes = await fetch('/api/norek')
+      const norekData = await norekRes.json()
+      setNorek(norekData.norek || '')
     }
     load()
   }, [])
@@ -73,13 +80,27 @@ export default function ProfilPage() {
   const [namaPerpustakaan, setNamaPerpustakaan] = useState(pengaturan.nama_perpustakaan);
   const [dendaPerHari, setDendaPerHari] = useState(pengaturan.denda_per_hari);
   const handleSimpanKonfigurasi = async () => {
+    let ok = true
     try {
       await updatePengaturan({
         nama_perpustakaan: namaPerpustakaan,
         denda_per_hari: dendaPerHari,
       })
-      alert('Konfigurasi berhasil disimpan!')
     } catch {
+      ok = false
+    }
+    try {
+      await fetch('/api/norek', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ norek }),
+      })
+    } catch {
+      ok = false
+    }
+    if (ok) {
+      alert('Konfigurasi berhasil disimpan!')
+    } else {
       alert('Gagal menyimpan konfigurasi')
     }
   }
@@ -151,11 +172,11 @@ export default function ProfilPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_340px] gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mt-6">
         {/* ─── LEFT ─── */}
         <div className="space-y-5">
           {/* Profil Admin */}
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 sm:p-6">
             <div className="flex items-center gap-4 pb-4 border-b border-[#F3F4F6]">
               <div className="relative">
                 <div className="w-16 h-16 rounded-full bg-[#FEF3DC] flex items-center justify-center text-[#B45309] text-xl font-bold">
@@ -238,6 +259,20 @@ export default function ProfilPage() {
                 />
                 <p className="text-[12px] text-[#9CA3AF] mt-1">Diberlakukan untuk setiap keterlambatan buku.</p>
               </div>
+              <div>
+                <label className="text-[13px] font-semibold text-[#374151]">
+                  No. Rekening Pembayaran Denda
+                </label>
+                <input
+                  value={norek}
+                  onChange={(e) => setNorek(e.target.value)}
+                  placeholder="Contoh: BCA 123456789 a.n. Perpustakaan"
+                  className="w-full mt-1.5 text-[14px] text-[#111827] border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#F5A623]/30"
+                />
+                <p className="text-[12px] text-[#9CA3AF] mt-1">
+                  Nomor rekening tujuan pembayaran denda yang akan ditampilkan ke anggota.
+                </p>
+              </div>
               <div className="bg-[#FEF9C3] border border-[#FDE047] rounded-lg p-3 text-[13px] text-[#854D0E]">
                 <AlertCircle size={16} className="inline mr-1.5" />
                 Perubahan pada denda akan langsung berdampak pada seluruh transaksi peminjaman baru
@@ -249,6 +284,7 @@ export default function ProfilPage() {
                   onClick={() => {
                     setNamaPerpustakaan(pengaturan.nama_perpustakaan);
                     setDendaPerHari(pengaturan.denda_per_hari);
+                    fetch('/api/norek').then(r => r.json()).then(d => setNorek(d.norek || '')).catch(() => {})
                   }}
                   className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors"
                 >

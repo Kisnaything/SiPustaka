@@ -164,8 +164,8 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-[1fr_340px] gap-6 mt-6">
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mt-6">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 sm:p-6 space-y-5">
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">
               Judul Lengkap Buku <span className="text-red-500">*</span>
@@ -177,7 +177,7 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#374151]">
                 Penulis / Pengarang <span className="text-red-500">*</span>
@@ -198,7 +198,7 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#374151]">
                 Tahun Terbit
@@ -433,7 +433,7 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-[#E5E7EB]">
+      <div className="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-[#E5E7EB] flex-wrap">
         <Link
           href="/admin/buku"
           className="text-[14px] font-semibold text-[#374151] border border-[#E5E7EB] rounded-xl px-5 py-3 hover:bg-[#F9FAFB]"

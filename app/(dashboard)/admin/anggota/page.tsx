@@ -128,16 +128,16 @@ export default function AnggotaPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-[24px] font-bold text-[#111827]">Kelola Data Anggota</h1>
+          <h1 className="text-[20px] sm:text-[24px] font-bold text-[#111827]">Kelola Data Anggota</h1>
           <p className="text-[14px] text-[#585F6C] mt-1">
             Kelola informasi keanggotaan perpustakaan secara efisien.
           </p>
         </div>
         <Link
           href="/admin/anggota/tambah"
-          className="flex items-center gap-2 bg-[#F5A623] hover:bg-[#E0951C] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm"
+          className="flex items-center gap-2 bg-[#F5A623] hover:bg-[#E0951C] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm shrink-0"
         >
           <UserPlus size={18} strokeWidth={2.5} />
           Tambah Anggota
@@ -145,7 +145,7 @@ export default function AnggotaPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -188,7 +188,7 @@ export default function AnggotaPage() {
 
       {/* Table card */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] mt-4 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-5 border-b border-[#E5E7EB]">
           <h2 className="text-[16px] font-bold text-[#B45309]">Daftar Anggota</h2>
           <div className="flex items-center gap-2">
             <button className="p-2 rounded-lg border border-[#E5E7EB] text-[#585F6C] hover:bg-[#F9FAFB]">
@@ -200,28 +200,29 @@ export default function AnggotaPage() {
           </div>
         </div>
 
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Anggota
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 ID Anggota
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Kontak
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Tgl Registrasi
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Pinjaman
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Status
               </th>
-              <th className="text-right text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-right text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3 whitespace-nowrap">
                 Aksi
               </th>
             </tr>
@@ -241,39 +242,39 @@ export default function AnggotaPage() {
                     key={member.id}
                     className={i !== paginatedData.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full shrink-0`} style={{ backgroundColor: avatarBg }} />
                         <div>
-                          <p className="text-[14px] font-semibold text-[#B45309]">
+                          <p className="text-[13px] sm:text-[14px] font-semibold text-[#B45309]">
                             {member.nama}
                           </p>
-                          <p className="text-[13px] text-[#585F6C]">{member.instansi || '-'}</p>
+                          <p className="text-[12px] sm:text-[13px] text-[#585F6C]">{member.instansi || '-'}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[14px] text-[#374151]">
+                    <td className="px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] text-[#374151] whitespace-nowrap">
                       {member.id.slice(0, 8)}...
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-[13.5px] text-[#374151]">{member.email}</p>
-                      <p className="text-[13px] text-[#9CA3AF]">{member.telepon || '-'}</p>
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <p className="text-[12.5px] sm:text-[13.5px] text-[#374151]">{member.email}</p>
+                      <p className="text-[12px] sm:text-[13px] text-[#9CA3AF]">{member.telepon || '-'}</p>
                     </td>
-                    <td className="px-6 py-4 text-[14px] text-[#585F6C]">
+                    <td className="px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] text-[#585F6C] whitespace-nowrap">
                       {new Date(member.tanggal_daftar).toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
                       })}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-[12px] font-semibold text-[#B45309] bg-[#FDECC8] px-2.5 py-1 rounded-md">
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className="text-[12px] font-semibold text-[#B45309] bg-[#FDECC8] px-2.5 py-1 rounded-md whitespace-nowrap">
                         {member.total_pinjaman || 0} Buku
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-4">
                       <span
-                        className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${
+                        className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap ${
                           member.status === 'AKTIF'
                             ? 'bg-[#D1FAE5] text-[#16A34A]'
                             : 'bg-[#F3F4F6] text-[#585F6C]'
@@ -282,7 +283,7 @@ export default function AnggotaPage() {
                         {member.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/anggota/edit/${member.id}`}
@@ -304,6 +305,7 @@ export default function AnggotaPage() {
             )}
           </tbody>
         </table>
+        </div>
 
         <Pagination
           currentPage={currentPage}

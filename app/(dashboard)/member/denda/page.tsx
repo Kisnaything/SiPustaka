@@ -42,6 +42,7 @@ const coverColors = ['#374151', '#0E7490', '#C8B89A', '#8FA68B', '#D4A574'];
 export default function DendaPage() {
   const allPeminjaman = usePeminjaman();
   const isMobile = useMobile();
+  const [norek, setNorek] = useState('');
   const [activeTab, setActiveTab] = useState('Semua');
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -53,6 +54,7 @@ export default function DendaPage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id);
     });
+    fetch('/api/norek').then(r => r.json()).then(d => setNorek(d.norek || '')).catch(() => {});
   }, []);
 
   // Filter peminjaman yang sudah selesai dan punya denda > 0
@@ -138,6 +140,7 @@ export default function DendaPage() {
       </h1>
 
       {jumlahBelumLunas > 0 && (
+        <>
         <div
           style={{
             display: 'flex',
@@ -147,7 +150,7 @@ export default function DendaPage() {
             border: '1px solid #FDE047',
             borderRadius: '8px',
             padding: '14px 16px',
-            marginBottom: '20px',
+            marginBottom: '12px',
             fontSize: '14px',
             color: '#854D0E',
             fontWeight: 500,
@@ -170,6 +173,34 @@ export default function DendaPage() {
           Kamu memiliki {jumlahBelumLunas} denda belum lunas. Total:{' '}
           Rp {totalBelumLunas.toLocaleString('id-ID')}
         </div>
+
+        {norek && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              backgroundColor: '#EFF6FF',
+              border: '1px solid #BFDBFE',
+              borderRadius: '8px',
+              padding: '14px 16px',
+              marginBottom: '20px',
+              fontSize: '14px',
+              color: '#1E40AF',
+              fontWeight: 500,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <rect width="20" height="14" x="2" y="5" rx="2" />
+              <line x1="2" x2="22" y1="10" y2="10" />
+            </svg>
+            <div>
+              Transfer denda ke:{' '}
+              <span style={{ fontWeight: 700 }}>{norek}</span>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       <div

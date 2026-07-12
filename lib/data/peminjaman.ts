@@ -1,4 +1,5 @@
 import { addNotifikasi } from './notifikasi'
+import { getBookById, updateBook } from './buku'
 
 export interface Peminjaman {
   id: string
@@ -133,6 +134,11 @@ export async function addPeminjaman(data: {
       }
     }
 
+    const buku = await getBookById(data.buku_id)
+    if (!buku || buku.stok <= 0) {
+      return { success: false, message: 'Stok buku habis, tidak bisa mengajukan peminjaman' }
+    }
+
     const kode = await generateKodePeminjaman()
     const newPeminjaman = await api<Peminjaman>({
       table: 'peminjaman',
@@ -205,6 +211,10 @@ export async function konfirmasiPengambilan(kode: string): Promise<{
         single: true,
       },
     })
+    const bukuConfirm = await getBookById(peminjaman.buku_id)
+    if (bukuConfirm && bukuConfirm.stok > 0) {
+      await updateBook(peminjaman.buku_id, { stok: bukuConfirm.stok - 1 })
+    }
     addNotifikasi({
       judul: 'Peminjaman Dikonfirmasi',
       pesan: `Peminjaman "${peminjaman.buku_judul}" oleh ${peminjaman.anggota_nama} telah dikonfirmasi`,
@@ -280,6 +290,10 @@ export async function selesaikanPeminjaman(id: string, dendaPerHari = 2000): Pro
         eq: { column: 'id', value: id },
       },
     })
+    const bukuSelesai = await getBookById(peminjaman.buku_id)
+    if (bukuSelesai) {
+      await updateBook(peminjaman.buku_id, { stok: bukuSelesai.stok + 1 })
+    }
     addNotifikasi({
       judul: 'Pengembalian Buku',
       pesan: `${peminjaman.anggota_nama} mengembalikan buku "${peminjaman.buku_judul}"${denda > 0 ? ` dengan denda Rp ${denda.toLocaleString('id-ID')}` : ''}`,

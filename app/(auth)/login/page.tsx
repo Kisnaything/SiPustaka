@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   BookMarked,
+  Eye,
+  EyeOff,
   LockKeyhole,
   Mail,
 } from "lucide-react";
@@ -29,6 +31,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   function update<K extends keyof LoginForm>(key: K, value: LoginForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -126,12 +129,20 @@ export default function LoginPage() {
               />
 
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={form.password}
                 onChange={(e) => update("password", e.target.value)}
                 placeholder="••••••••"
-                className={inputClass(!!errors.password) + " pl-10"}
+                className={inputClass(!!errors.password) + " pl-10 pr-10"}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
             </div>
           </Field>
 

@@ -213,9 +213,9 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-bold text-[#111827]">
+          <h1 className="text-[22px] sm:text-[28px] font-bold text-[#111827]">
             Selamat Datang Kembali, {adminName}!
           </h1>
           <p className="text-[14px] font-medium text-[#585F6C] mt-1">
@@ -224,7 +224,7 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/admin/buku/tambah"
-          className="flex items-center gap-2 bg-[#B45309] hover:bg-[#92400E] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm"
+          className="flex items-center gap-2 bg-[#B45309] hover:bg-[#92400E] transition-colors text-white text-[14px] font-semibold px-5 py-3 rounded-xl shadow-sm shrink-0"
         >
           <Plus size={18} strokeWidth={2.5} />
           Tambah Buku Baru
@@ -232,7 +232,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           const TrendIcon = stat.trendUp ? TrendingUp : TrendingDown;
@@ -273,7 +273,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Chart + Activity */}
-      <div className="grid grid-cols-[1fr_360px] gap-4 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 mt-6">
         {/* Chart */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
           <div className="flex items-center justify-between">
@@ -353,7 +353,7 @@ export default function DashboardPage() {
 
       {/* Due soon table */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] mt-6">
-        <div className="flex items-center justify-between px-6 py-5">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-5">
           <h2 className="text-[16px] font-bold text-[#111827]">
             Peminjaman Akan Jatuh Tempo
           </h2>
@@ -361,22 +361,23 @@ export default function DashboardPage() {
             Lihat Semua
           </Link>
         </div>
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3">
                 Anggota
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3">
                 Judul Buku
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3">
                 Tgl Pinjam
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3">
                 Sisa Hari
               </th>
-              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-6 py-3">
+              <th className="text-left text-[11px] font-semibold text-[#585F6C] uppercase tracking-wide px-3 sm:px-6 py-3">
                 Status
               </th>
             </tr>
@@ -394,22 +395,22 @@ export default function DashboardPage() {
                   key={row.name + i}
                   className={i !== dueSoonData.length - 1 ? 'border-b border-[#F3F4F6]' : ''}
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#FDECC8] text-[#B45309] text-[12px] font-bold flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-full bg-[#FDECC8] text-[#B45309] text-[12px] font-bold flex items-center justify-center shrink-0">
                         {row.initials}
                       </div>
-                      <span className="text-[14px] font-semibold text-[#111827]">{row.name}</span>
+                      <span className="text-[13px] sm:text-[14px] font-semibold text-[#111827] truncate max-w-[120px] sm:max-w-none">{row.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[14px] text-[#585F6C]">{row.book}</td>
-                  <td className="px-6 py-4 text-[14px] text-[#585F6C]">{row.date}</td>
-                  <td className={`px-6 py-4 text-[14px] font-bold ${row.sisaColor}`}>
+                  <td className="px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] text-[#585F6C] truncate max-w-[150px] sm:max-w-none">{row.book}</td>
+                  <td className="px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] text-[#585F6C] whitespace-nowrap">{row.date}</td>
+                  <td className={`px-3 sm:px-6 py-4 text-[13px] sm:text-[14px] font-bold whitespace-nowrap ${row.sisaColor}`}>
                     {row.sisaHari}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-4">
                     <span
-                      className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${row.statusColor}`}
+                      className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap ${row.statusColor}`}
                     >
                       {row.status}
                     </span>
@@ -419,6 +420,7 @@ export default function DashboardPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

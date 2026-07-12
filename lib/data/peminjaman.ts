@@ -344,6 +344,12 @@ export async function verifikasiDenda(
         pesan: `Denda peminjaman "${peminjaman.buku_judul}" oleh ${peminjaman.anggota_nama} telah dibayar`,
         tipe: 'verifikasi_denda',
       })
+    } else if (status === 'Ditolak') {
+      addNotifikasi({
+        judul: 'Denda Ditolak',
+        pesan: `Pembayaran denda "${peminjaman.buku_judul}" oleh ${peminjaman.anggota_nama} ditolak: ${pesan}`,
+        tipe: 'verifikasi_denda',
+      })
     }
     return { success: true, message: `Denda berhasil diverifikasi sebagai ${status}` }
   } catch (err) {

@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useBuku } from '@/lib/hooks/useBuku';
 import { useAnggota } from '@/lib/hooks/useAnggota';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
+import { useNotifikasi } from '@/lib/hooks/useNotifikasi';
 
 // ─── Helper ──────────────────────────────────────────────────
 function getStatusBadge(days: number) {
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const { books: bukuList, loading: loadingBuku } = useBuku();
   const { anggota: anggotaList } = useAnggota();
   const peminjamanList = usePeminjaman();
+  const notifList = useNotifikasi();
 
   const [now] = useState(() => Date.now());
   const [year, setYear] = useState('Tahun ' + new Date().getFullYear());
@@ -70,52 +72,36 @@ export default function DashboardPage() {
     };
   }, [bukuList, anggotaList, peminjamanList]);
 
+  const activityIcons: Record<string, { icon: typeof LogIn; bg: string; color: string }> = {
+    peminjaman_baru: { icon: LogIn, bg: 'bg-[#DBEAFE]', color: 'text-[#2563EB]' },
+    info: { icon: Upload, bg: 'bg-[#FDECC8]', color: 'text-[#B45309]' },
+    pengembalian: { icon: CornerUpLeft, bg: 'bg-[#D1FAE5]', color: 'text-[#059669]' },
+    verifikasi_denda: { icon: CreditCard, bg: 'bg-[#D1FAE5]', color: 'text-[#059669]' },
+    buku_baru: { icon: Plus, bg: 'bg-[#DBEAFE]', color: 'text-[#2563EB]' },
+    buku_diedit: { icon: BookOpen, bg: 'bg-[#FDECC8]', color: 'text-[#B45309]' },
+    anggota_baru: { icon: Users, bg: 'bg-[#DBEAFE]', color: 'text-[#2563EB]' },
+  }
+
   const recentActivities = useMemo(() => {
-    const sorted = [...peminjamanList].sort(
-      (a, b) => new Date(b.tanggal_reservasi).getTime() - new Date(a.tanggal_reservasi).getTime()
-    );
-    const top = sorted.slice(0, 4);
+    const top = notifList.slice(0, 4);
 
-    return top.map((p) => {
-      let title = '';
-      let icon = LogIn;
-      let iconBg = 'bg-[#DBEAFE]';
-      let iconColor = 'text-[#2563EB]';
-      let time = 'Baru saja';
+    return top.map((n) => {
+      const icon = activityIcons[n.tipe]?.icon || AlertCircle;
+      const iconBg = activityIcons[n.tipe]?.bg || 'bg-[#F3F4F6]';
+      const iconColor = activityIcons[n.tipe]?.color || 'text-[#6B7280]';
 
-      const diffMs = now - new Date(p.tanggal_reservasi).getTime();
+      const diffMs = now - new Date(n.created_at).getTime();
       const diffMin = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
-      if (diffMin < 1) time = 'Baru saja';
-      else if (diffMin < 60) time = `${diffMin} menit yang lalu`;
+      let time = 'Baru saja';
+      if (diffMin >= 1 && diffMin < 60) time = `${diffMin} menit yang lalu`;
       else if (diffHours < 24) time = `${diffHours} jam yang lalu`;
+      else if (diffHours < 48) time = 'Kemarin';
       else time = `${Math.floor(diffHours / 24)} hari yang lalu`;
 
-      if (p.status === 'Menunggu Konfirmasi') {
-        title = `${p.anggota_nama} mengajukan peminjaman "${p.buku_judul}"`;
-        icon = LogIn;
-        iconBg = 'bg-[#DBEAFE]';
-        iconColor = 'text-[#2563EB]';
-      } else if (p.status === 'Aktif') {
-        title = `Peminjaman "${p.buku_judul}" oleh ${p.anggota_nama} dikonfirmasi`;
-        icon = Upload;
-        iconBg = 'bg-[#FDECC8]';
-        iconColor = 'text-[#B45309]';
-      } else if (p.status === 'Selesai') {
-        title = `${p.anggota_nama} mengembalikan buku "${p.buku_judul}"`;
-        icon = CornerUpLeft;
-        iconBg = 'bg-[#D1FAE5]';
-        iconColor = 'text-[#059669]';
-      } else {
-        title = `Transaksi ${p.kode_peminjaman} — ${p.status}`;
-        icon = AlertCircle;
-        iconBg = 'bg-[#FEE2E2]';
-        iconColor = 'text-[#DC2626]';
-      }
-
-      return { icon, iconBg, iconColor, title, time };
+      return { icon, iconBg, iconColor, title: n.pesan, time };
     });
-  }, [peminjamanList, now]);
+  }, [notifList, now]);
 
   const dueSoonData = useMemo(() => {
     const now = new Date();

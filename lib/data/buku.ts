@@ -1,3 +1,5 @@
+import { addNotifikasi } from './notifikasi'
+
 export interface Buku {
   id: string
   judul: string
@@ -62,7 +64,7 @@ export async function getBookById(id: string): Promise<Buku | null> {
 
 export async function addBook(book: Omit<Buku, 'id'>): Promise<Buku | null> {
   try {
-    return await api<Buku>({
+    const result = await api<Buku>({
       table: 'buku',
       operation: 'insert',
       params: {
@@ -71,6 +73,14 @@ export async function addBook(book: Omit<Buku, 'id'>): Promise<Buku | null> {
         single: true,
       },
     })
+    if (result) {
+      addNotifikasi({
+        judul: 'Buku Baru',
+        pesan: `Buku "${result.judul}" telah ditambahkan ke perpustakaan`,
+        tipe: 'buku_baru',
+      })
+    }
+    return result
   } catch {
     return null
   }
@@ -78,7 +88,7 @@ export async function addBook(book: Omit<Buku, 'id'>): Promise<Buku | null> {
 
 export async function updateBook(id: string, data: Partial<Buku>): Promise<Buku | null> {
   try {
-    return await api<Buku>({
+    const result = await api<Buku>({
       table: 'buku',
       operation: 'update',
       params: {
@@ -88,6 +98,14 @@ export async function updateBook(id: string, data: Partial<Buku>): Promise<Buku 
         single: true,
       },
     })
+    if (result && data.judul) {
+      addNotifikasi({
+        judul: 'Buku Diperbarui',
+        pesan: `Buku "${result.judul}" telah diperbarui`,
+        tipe: 'buku_diedit',
+      })
+    }
+    return result
   } catch {
     return null
   }

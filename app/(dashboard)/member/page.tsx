@@ -299,7 +299,7 @@ export default function DashboardPage() {
                       <div style={{
                         width: '40px',
                         height: '54px',
-                        backgroundColor: coverColors[parseInt(item.id) % coverColors.length],
+                        backgroundColor: coverColors[item.id.charCodeAt(0) % coverColors.length],
                         borderRadius: '4px',
                         flexShrink: 0,
                       }} />

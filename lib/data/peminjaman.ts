@@ -64,11 +64,14 @@ async function attachCovers(list: Peminjaman[]): Promise<Peminjaman[]> {
 
 export async function getPeminjamanById(id: string): Promise<Peminjaman | null> {
   try {
-    return await api<Peminjaman>({
+    const item = await api<Peminjaman>({
       table: 'peminjaman',
       operation: 'select',
       params: { select: '*', eq: { column: 'id', value: id }, single: true },
     })
+    if (!item) return null
+    const withCovers = await attachCovers([item])
+    return withCovers[0] || item
   } catch {
     return null
   }
@@ -81,7 +84,8 @@ export async function getPeminjamanByKode(kode: string): Promise<Peminjaman | nu
       operation: 'select',
       params: { select: '*', eq: { column: 'kode_peminjaman', value: kode } },
     })
-    return list[0] || null
+    const withCovers = await attachCovers(list)
+    return withCovers[0] || null
   } catch {
     return null
   }

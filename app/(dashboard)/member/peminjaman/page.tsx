@@ -317,7 +317,7 @@ export default function PeminjamanPage() {
                         width: '36px',
                         height: '48px',
                         flexShrink: 0,
-                        backgroundColor: coverColors[parseInt(item.id) % coverColors.length],
+                        backgroundColor: coverColors[item.id.charCodeAt(0) % coverColors.length],
                         borderRadius: '4px',
                       }}
                     />

@@ -83,7 +83,7 @@ export default function LaporanPage() {
       p.anggota_nama,
       p.buku_judul,
       p.tanggal_pinjam || p.tanggal_reservasi.split('T')[0],
-      p.status === 'Selesai' ? p.tanggal_pinjam || '-' : '-',
+      p.status === 'Selesai' ? (p.tanggal_selesai || p.tanggal_pinjam || '-') : '-',
       p.status,
       p.denda ? `Rp ${p.denda.toLocaleString('id-ID')}` : 'Rp 0',
     ]);
@@ -262,15 +262,16 @@ export default function LaporanPage() {
                           : '-'}
                       </td>
                       <td className="px-6 py-4 text-[14px] text-[#585F6C]">
-                        {p.status === 'Selesai'
-                          ? p.tanggal_pinjam
-                            ? new Date(p.tanggal_pinjam).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })
-                            : '-'
-                          : '-'}
+                        {(() => {
+                          if (p.status !== 'Selesai') return '-'
+                          const tgl = p.tanggal_selesai || p.tanggal_pinjam
+                          if (!tgl) return '-'
+                          return new Date(tgl).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        })()}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -319,11 +320,11 @@ export default function LaporanPage() {
                 dailyCounts[date] = (dailyCounts[date] || 0) + 1;
               });
 
-              // Tampilkan 7 hari kalender terakhir (termasuk yg 0 transaksi)
-              const today = new Date();
+              // Tampilkan 7 hari terakhir dari rentang filter
+              const end = new Date(endDate);
               const displayDates: string[] = [];
               for (let i = 6; i >= 0; i--) {
-                const d = new Date(today);
+                const d = new Date(end);
                 d.setDate(d.getDate() - i);
                 displayDates.push(d.toISOString().split('T')[0]);
               }
@@ -333,7 +334,7 @@ export default function LaporanPage() {
               return displayDates.map((date) => {
                 const count = dailyCounts[date] || 0;
                 const height = (count / maxCount) * 100;
-                const isToday = date === today.toISOString().split('T')[0];
+                const isEnd = date === end.toISOString().split('T')[0];
                 return (
                   <div key={date} className="flex flex-col items-center flex-1">
                     <div className="relative w-full max-w-[36px] flex flex-col items-center">
@@ -347,10 +348,10 @@ export default function LaporanPage() {
                         style={{ height: `${Math.max(height, count > 0 ? 4 : 2)}%` }}
                       />
                     </div>
-                    <span className={`text-[10px] mt-1 ${isToday ? 'font-bold text-[#111827]' : 'text-[#585F6C]'}`}>
+                    <span className={`text-[10px] mt-1 ${isEnd ? 'font-bold text-[#111827]' : 'text-[#585F6C]'}`}>
                       {new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                     </span>
-                    {isToday && <span className="text-[8px] text-[#F5A623] font-semibold">Hari ini</span>}
+                    {isEnd && <span className="text-[8px] text-[#F5A623] font-semibold">Akhir</span>}
                   </div>
                 );
               });

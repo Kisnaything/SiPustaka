@@ -79,6 +79,10 @@ export default function ProfilPage() {
 
   const [namaPerpustakaan, setNamaPerpustakaan] = useState(pengaturan.nama_perpustakaan);
   const [dendaPerHari, setDendaPerHari] = useState(pengaturan.denda_per_hari);
+  useEffect(() => {
+    setNamaPerpustakaan(pengaturan.nama_perpustakaan)
+    setDendaPerHari(pengaturan.denda_per_hari)
+  }, [pengaturan.nama_perpustakaan, pengaturan.denda_per_hari])
   const handleSimpanKonfigurasi = async () => {
     let ok = true
     try {

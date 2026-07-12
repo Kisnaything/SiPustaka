@@ -479,7 +479,7 @@ export default function KatalogPage() {
                 }}>
                   <div style={{
                     width: '36px', height: '48px', flexShrink: 0,
-                    backgroundColor: buku.cover ? undefined : coverColors[parseInt(buku.id) % coverColors.length],
+                    backgroundColor: buku.cover ? undefined : coverColors[buku.id.charCodeAt(0) % coverColors.length],
                     borderRadius: '4px', overflow: 'hidden',
                   }}>
                     {buku.cover && (

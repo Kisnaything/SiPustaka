@@ -68,7 +68,7 @@ export default function DendaPage() {
       id: p.id,
       judul: p.buku_judul,
       cover: p.buku_cover || null,
-      coverColor: coverColors[parseInt(p.id) % coverColors.length],
+      coverColor: coverColors[p.id.charCodeAt(0) % coverColors.length],
       hariTerlambat: p.hari_terlambat || 0,
       jumlahDenda: p.denda,
       tanggal: p.tanggal_pinjam

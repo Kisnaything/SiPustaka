@@ -4,16 +4,11 @@ import { useState, useEffect } from 'react';
 import {
   CheckCircle,
   XCircle,
-  User,
   BookOpen,
   Calendar,
   Clock,
   AlertCircle,
   Search,
-  Eye,
-  FileText,
-  ThumbsUp,
-  ThumbsDown,
 } from 'lucide-react';
 import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
 import { verifikasiDenda } from '@/lib/data/peminjaman';

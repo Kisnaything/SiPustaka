@@ -394,7 +394,7 @@ export default function DetailPeminjamanPage() {
                   width: '44px',
                   height: '58px',
                   flexShrink: 0,
-                  backgroundColor: coverColors[parseInt(data.id) % coverColors.length],
+                  backgroundColor: coverColors[data.id.charCodeAt(0) % coverColors.length],
                   borderRadius: '6px',
                 }}
               />

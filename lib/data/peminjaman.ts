@@ -8,6 +8,7 @@ export interface Peminjaman {
   anggota_nama: string
   buku_id: string
   buku_judul: string
+  buku_cover: string | null
   tanggal_reservasi: string
   tanggal_pinjam: string | null
   jatuh_tempo: string | null
@@ -38,14 +39,27 @@ async function api<T>(body: Record<string, unknown>): Promise<T> {
 
 export async function getPeminjaman(): Promise<Peminjaman[]> {
   try {
-    return await api<Peminjaman[]>({
+    const list = await api<Peminjaman[]>({
       table: 'peminjaman',
       operation: 'select',
       params: { select: '*', order: { column: 'tanggal_reservasi', ascending: false } },
     })
+    return await attachCovers(list)
   } catch {
     return []
   }
+}
+
+async function attachCovers(list: Peminjaman[]): Promise<Peminjaman[]> {
+  if (list.length === 0) return list
+  const ids = [...new Set(list.map((p) => p.buku_id))]
+  const covers = await api<{ id: string; cover: string | null }[]>({
+    table: 'buku',
+    operation: 'select',
+    params: { select: 'id,cover', in: { column: 'id', values: ids } },
+  }).catch(() => [])
+  const map = new Map(covers.map((c) => [c.id, c.cover]))
+  return list.map((p) => ({ ...p, buku_cover: map.get(p.buku_id) || null }))
 }
 
 export async function getPeminjamanById(id: string): Promise<Peminjaman | null> {
@@ -85,7 +99,7 @@ export async function getPeminjamanAktif(): Promise<Peminjaman[]> {
 
 export async function getPeminjamanByAnggota(anggotaId: string): Promise<Peminjaman[]> {
   try {
-    return await api<Peminjaman[]>({
+    const list = await api<Peminjaman[]>({
       table: 'peminjaman',
       operation: 'select',
       params: {
@@ -94,6 +108,7 @@ export async function getPeminjamanByAnggota(anggotaId: string): Promise<Peminja
         order: { column: 'tanggal_reservasi', ascending: false },
       },
     })
+    return await attachCovers(list)
   } catch {
     return []
   }

@@ -379,15 +379,26 @@ export default function DetailPeminjamanPage() {
               boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
             }}
           >
-            <div
-              style={{
-                width: '44px',
-                height: '58px',
-                flexShrink: 0,
-                backgroundColor: coverColors[parseInt(data.id) % coverColors.length],
-                borderRadius: '6px',
-              }}
-            />
+            {data.buku_cover ? (
+              <img
+                src={data.buku_cover}
+                alt={data.buku_judul}
+                style={{
+                  width: '44px', height: '58px', flexShrink: 0,
+                  borderRadius: '6px', objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '44px',
+                  height: '58px',
+                  flexShrink: 0,
+                  backgroundColor: coverColors[parseInt(data.id) % coverColors.length],
+                  borderRadius: '6px',
+                }}
+              />
+            )}
             <div>
               <p
                 style={{

@@ -302,15 +302,26 @@ export default function PeminjamanPage() {
 
                 {/* Buku */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '48px',
-                      flexShrink: 0,
-                      backgroundColor: coverColors[parseInt(item.id) % coverColors.length],
-                      borderRadius: '4px',
-                    }}
-                  />
+                  {item.buku_cover ? (
+                    <img
+                      src={item.buku_cover}
+                      alt={item.buku_judul}
+                      style={{
+                        width: '36px', height: '48px', flexShrink: 0,
+                        borderRadius: '4px', objectFit: 'cover',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '48px',
+                        flexShrink: 0,
+                        backgroundColor: coverColors[parseInt(item.id) % coverColors.length],
+                        borderRadius: '4px',
+                      }}
+                    />
+                  )}
                   <div>
                     <span
                       style={{

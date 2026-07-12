@@ -40,6 +40,10 @@ export async function POST(request: NextRequest) {
           const val = typeof params.eq.value === 'string' ? `eq.${params.eq.value}` : `eq.${String(params.eq.value)}`
           queryParts.push(`${col}=${val}`)
         }
+        if (params.in) {
+          const vals = (params.in.values as any[]).map((v: any) => typeof v === 'string' ? v : String(v)).join(',')
+          queryParts.push(`${params.in.column}=in.(${vals})`)
+        }
         if (params.order) {
           queryParts.push(`order=${params.order.column}.${params.order.ascending ? 'asc' : 'desc'}`)
         }

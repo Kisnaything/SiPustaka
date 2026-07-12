@@ -67,6 +67,7 @@ export default function DendaPage() {
     .map((p) => ({
       id: p.id,
       judul: p.buku_judul,
+      cover: p.buku_cover || null,
       coverColor: coverColors[parseInt(p.id) % coverColors.length],
       hariTerlambat: p.hari_terlambat || 0,
       jumlahDenda: p.denda,
@@ -301,15 +302,26 @@ export default function DendaPage() {
                   }
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '36px',
-                        height: '48px',
-                        flexShrink: 0,
-                        backgroundColor: item.coverColor,
-                        borderRadius: '4px',
-                      }}
-                    />
+                    {item.cover ? (
+                      <img
+                        src={item.cover}
+                        alt={item.judul}
+                        style={{
+                          width: '36px', height: '48px', flexShrink: 0,
+                          borderRadius: '4px', objectFit: 'cover',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '48px',
+                          flexShrink: 0,
+                          backgroundColor: item.coverColor,
+                          borderRadius: '4px',
+                        }}
+                      />
+                    )}
                     <span style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>
                       {item.judul}
                     </span>

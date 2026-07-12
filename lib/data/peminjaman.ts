@@ -14,6 +14,7 @@ export interface Peminjaman {
   denda: number
   hari_terlambat: number
   status_denda: 'Belum Lunas' | 'Menunggu Verifikasi' | 'Lunas' | 'Ditolak' | null
+  tanggal_selesai: string | null
   pesan_ditolak: string | null
   bukti_bayar: string | null
 }
@@ -274,6 +275,7 @@ export async function selesaikanPeminjaman(id: string, dendaPerHari = 2000): Pro
           denda,
           hari_terlambat: hariTerlambat,
           status_denda: denda > 0 ? 'Belum Lunas' : null,
+          tanggal_selesai: new Date().toISOString().split('T')[0],
         },
         eq: { column: 'id', value: id },
       },

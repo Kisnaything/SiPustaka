@@ -13,7 +13,7 @@ import { usePengaturan } from '@/lib/hooks/usePengaturan';
 import { selesaikanPeminjaman } from '@/lib/data/peminjaman';
 import Pagination from '@/components/Pagination';
 
-const tabs = ['Mendekati Tenggat', 'Selesai'] as const;
+const tabs = ['Semua', 'Jatuh Tempo Hari Ini', 'Mendekati Tenggat', 'Selesai'] as const;
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -27,42 +27,51 @@ export default function PengembalianPage() {
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Mendekati Tenggat');
+  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Semua');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
   const now = useMemo(() => new Date(), [])
+  const todayStr = now.toISOString().split('T')[0]
 
   const aktifList = useMemo(() =>
     allPeminjaman.filter((p) => p.status === 'Aktif'),
   [allPeminjaman])
 
+  const tujuhHariLalu = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 7)
+    return d.toISOString().split('T')[0]
+  }, [])
+
   // ─── Data per tab ──────────────────────────────────────
   const tabData = useMemo(() => {
-    const tujuhHariLalu = new Date();
-    tujuhHariLalu.setDate(tujuhHariLalu.getDate() - 7);
-    const tujuhHariStr = tujuhHariLalu.toISOString().split('T')[0];
+    const semua = aktifList
+
+    const jatuhTempoHariIni = aktifList.filter((p) =>
+      p.jatuh_tempo === todayStr
+    )
 
     const mendekati = aktifList.filter((p) => {
-      if (!p.jatuh_tempo || new Date(p.jatuh_tempo) < now) return false;
-      const diff = Math.ceil((new Date(p.jatuh_tempo).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      return diff <= 3;
+      if (!p.jatuh_tempo) return false
+      const diff = Math.ceil((new Date(p.jatuh_tempo).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      return diff >= 1 && diff <= 3
     })
 
-    const selesai = allPeminjaman.filter((p) => {
-      if (p.status !== 'Selesai') return false;
-      if (p.tanggal_selesai) {
-        return p.tanggal_selesai >= tujuhHariStr;
-      }
-      return false;
-    })
+    const selesai = allPeminjaman.filter((p) =>
+      p.status === 'Selesai' && p.tanggal_selesai && p.tanggal_selesai >= tujuhHariLalu
+    )
 
-    return { mendekati, selesai }
-  }, [aktifList, allPeminjaman, now])
+    return { semua, jatuhTempoHariIni, mendekati, selesai }
+  }, [aktifList, allPeminjaman, todayStr, now, tujuhHariLalu])
 
-  // ─── Search filter ─────────────────────────────────────
+  // ─── Search + pagination ──────────────────────────────
   const currentList = useMemo(() => {
-    const raw = activeTab === 'Mendekati Tenggat' ? tabData.mendekati : tabData.selesai
+    const raw =
+      activeTab === 'Semua' ? tabData.semua :
+      activeTab === 'Jatuh Tempo Hari Ini' ? tabData.jatuhTempoHariIni :
+      activeTab === 'Mendekati Tenggat' ? tabData.mendekati :
+      tabData.selesai
     return raw.filter((p) =>
       p.kode_peminjaman.toLowerCase().includes(search.toLowerCase()) ||
       p.anggota_nama.toLowerCase().includes(search.toLowerCase()) ||
@@ -70,7 +79,7 @@ export default function PengembalianPage() {
     )
   }, [activeTab, tabData, search])
 
-  const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE)
   const paginatedData = currentList.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -81,10 +90,7 @@ export default function PengembalianPage() {
   // ─── Stats ─────────────────────────────────────────────
   const stats = useMemo(() => ({
     totalTerlambat: aktifList.filter((p) => p.jatuh_tempo && new Date(p.jatuh_tempo) < now).length,
-    jatuhTempoHariIni: aktifList.filter((p) => {
-      if (!p.jatuh_tempo) return false;
-      return p.jatuh_tempo === now.toISOString().split('T')[0];
-    }).length,
+    jatuhTempoHariIni: tabData.jatuhTempoHariIni.length,
     sedangDipinjam: aktifList.length,
     estimasiDenda: aktifList.reduce((sum, p) => {
       if (!p.jatuh_tempo) return sum;
@@ -95,7 +101,7 @@ export default function PengembalianPage() {
       }
       return sum;
     }, 0),
-  }), [aktifList, pengaturan, now])
+  }), [aktifList, tabData, pengaturan, now])
 
   const handleKonfirmasiKembali = async (id: string) => {
     if (!confirm('Yakin buku ini sudah dikembalikan?')) return;
@@ -164,24 +170,33 @@ export default function PengembalianPage() {
 
       {/* Tabs */}
       <div className="flex gap-0 border-b border-[#E5E7EB] overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-5 py-3 text-[14px] font-semibold whitespace-nowrap transition-colors ${
-              activeTab === tab
-                ? 'text-[#B45309] border-b-2 border-[#F5A623]'
-                : 'text-[#585F6C] hover:text-[#111827]'
-            }`}
-          >
-            {tab}
-            {tab === 'Mendekati Tenggat' && tabData.mendekati.length > 0 && (
-              <span className="ml-2 text-[11px] bg-[#FEE2E2] text-[#DC2626] px-2 py-0.5 rounded-full">
-                {tabData.mendekati.length}
-              </span>
-            )}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const count =
+            tab === 'Semua' ? tabData.semua.length :
+            tab === 'Jatuh Tempo Hari Ini' ? tabData.jatuhTempoHariIni.length :
+            tab === 'Mendekati Tenggat' ? tabData.mendekati.length :
+            tabData.selesai.length
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-3 text-[14px] font-semibold whitespace-nowrap transition-colors ${
+                activeTab === tab
+                  ? 'text-[#B45309] border-b-2 border-[#F5A623]'
+                  : 'text-[#585F6C] hover:text-[#111827]'
+              }`}
+            >
+              {tab}
+              {count > 0 && (
+                <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full ${
+                  tab === 'Selesai' ? 'bg-[#F3F4F6] text-[#6B7280]' : 'bg-[#FEE2E2] text-[#DC2626]'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Content */}
@@ -194,18 +209,31 @@ export default function PengembalianPage() {
           </div>
         ) : (
           paginatedData.map((peminjaman) => {
-            const isMendekati = activeTab === 'Mendekati Tenggat'
+            const isSelesai = activeTab === 'Selesai'
             const isTerlambat = peminjaman.jatuh_tempo && new Date(peminjaman.jatuh_tempo) < now
+            const isMendekati = !isSelesai && !isTerlambat && activeTab === 'Mendekati Tenggat'
+            const isJatuhTempoHariIni = !isSelesai && peminjaman.jatuh_tempo === todayStr
             const hariTerlambat = isTerlambat
               ? Math.ceil((now.getTime() - new Date(peminjaman.jatuh_tempo!).getTime()) / (1000 * 60 * 60 * 24))
               : 0
             const estimasiDenda = hariTerlambat * (pengaturan.denda_per_hari || 2000)
 
-            const borderColor = isTerlambat
-              ? 'border-l-[#DC2626]'
-              : isMendekati
-                ? 'border-l-[#CA8A04]'
-                : 'border-l-[#16A34A]'
+            let borderColor = 'border-l-[#16A34A]'
+            let badgeClass = 'bg-[#DCFCE7] text-[#16A34A]'
+            let badgeLabel = 'NORMAL'
+            if (isSelesai) {
+              borderColor = 'border-l-[#6B7280]'
+              badgeClass = 'bg-[#F3F4F6] text-[#6B7280]'
+              badgeLabel = 'SELESAI'
+            } else if (isTerlambat) {
+              borderColor = 'border-l-[#DC2626]'
+              badgeClass = 'bg-[#FEE2E2] text-[#DC2626]'
+              badgeLabel = 'TERLAMBAT'
+            } else if (isMendekati || isJatuhTempoHariIni) {
+              borderColor = 'border-l-[#CA8A04]'
+              badgeClass = 'bg-[#FDECC8] text-[#B45309]'
+              badgeLabel = isJatuhTempoHariIni ? 'HARI INI' : 'MENDEKATI'
+            }
 
             return (
               <div key={peminjaman.id} className={`bg-white rounded-xl border-l-4 ${borderColor} border border-[#E5E7EB] p-5 hover:shadow-sm transition-shadow`}>
@@ -216,21 +244,16 @@ export default function PengembalianPage() {
                       <span className="font-mono text-[14px] font-bold text-[#B45309]">
                         {peminjaman.kode_peminjaman}
                       </span>
-                      <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${
-                        isTerlambat ? 'bg-[#FEE2E2] text-[#DC2626]'
-                          : isMendekati ? 'bg-[#FDECC8] text-[#B45309]'
-                          : activeTab === 'Selesai' ? 'bg-[#F3F4F6] text-[#6B7280]'
-                          : 'bg-[#DCFCE7] text-[#16A34A]'
-                      }`}>
-                        {isTerlambat ? 'TERLAMBAT' : isMendekati ? 'MENDEKATI' : activeTab === 'Selesai' ? 'SELESAI' : 'NORMAL'}
+                      <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${badgeClass}`}>
+                        {badgeLabel}
                       </span>
                       {isTerlambat && (
                         <span className="text-[12px] font-medium text-[#DC2626]">{hariTerlambat} hari terlambat</span>
                       )}
-                      {isMendekati && peminjaman.jatuh_tempo && (
+                      {(isMendekati || isJatuhTempoHariIni) && peminjaman.jatuh_tempo && (
                         <span className="text-[12px] font-medium text-[#B45309] flex items-center gap-1">
                           <Clock size={13} />
-                          {Math.ceil((new Date(peminjaman.jatuh_tempo).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} hari lagi
+                          {isJatuhTempoHariIni ? 'Jatuh tempo hari ini' : `${Math.ceil((new Date(peminjaman.jatuh_tempo).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} hari lagi`}
                         </span>
                       )}
                     </div>
@@ -253,20 +276,20 @@ export default function PengembalianPage() {
                       <span className={isTerlambat ? 'font-bold text-[#DC2626]' : 'font-medium'}>
                         Jatuh tempo: {peminjaman.jatuh_tempo ? formatDate(peminjaman.jatuh_tempo) : '-'}
                       </span>
-                      {activeTab === 'Selesai' && peminjaman.tanggal_selesai && (
+                      {isSelesai && peminjaman.tanggal_selesai && (
                         <span>Selesai: {formatDate(peminjaman.tanggal_selesai)}</span>
                       )}
                       {isTerlambat && (
                         <span className="font-semibold text-[#DC2626]">Denda: Rp {estimasiDenda.toLocaleString('id-ID')}</span>
                       )}
-                      {peminjaman.denda > 0 && activeTab === 'Selesai' && (
+                      {peminjaman.denda > 0 && isSelesai && (
                         <span className="font-semibold text-[#DC2626]">Denda: Rp {peminjaman.denda.toLocaleString('id-ID')}</span>
                       )}
                     </div>
                   </div>
 
                   {/* Action */}
-                  {activeTab !== 'Selesai' && (
+                  {!isSelesai && (
                     <div className="shrink-0">
                       <button
                         onClick={() => handleKonfirmasiKembali(peminjaman.id)}

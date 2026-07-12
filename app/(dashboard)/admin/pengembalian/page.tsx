@@ -6,15 +6,14 @@ import {
   User,
   BookOpen,
   Search,
-  AlertCircle,
   Clock,
 } from 'lucide-react';
-import { usePeminjaman, usePeminjamanAktif } from '@/lib/hooks/usePeminjaman';
+import { usePeminjaman } from '@/lib/hooks/usePeminjaman';
 import { usePengaturan } from '@/lib/hooks/usePengaturan';
 import { selesaikanPeminjaman } from '@/lib/data/peminjaman';
 import Pagination from '@/components/Pagination';
 
-const tabs = ['Mendekati Tenggat', 'Aktif', 'Selesai'] as const;
+const tabs = ['Mendekati Tenggat', 'Selesai'] as const;
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -23,10 +22,8 @@ function formatDate(dateStr: string) {
 }
 
 export default function PengembalianPage() {
-  const aktifList = usePeminjamanAktif();
   const allPeminjaman = usePeminjaman();
   const pengaturan = usePengaturan();
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [search, setSearch] = useState('');
@@ -34,7 +31,11 @@ export default function PengembalianPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), [])
+
+  const aktifList = useMemo(() =>
+    allPeminjaman.filter((p) => p.status === 'Aktif'),
+  [allPeminjaman])
 
   // ─── Data per tab ──────────────────────────────────────
   const tabData = useMemo(() => {
@@ -48,12 +49,6 @@ export default function PengembalianPage() {
       return diff <= 3;
     })
 
-    const aktif = aktifList.filter((p) => {
-      if (!p.jatuh_tempo) return true;
-      const diff = Math.ceil((new Date(p.jatuh_tempo).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      return diff > 3 || new Date(p.jatuh_tempo) < now;
-    })
-
     const selesai = allPeminjaman.filter((p) => {
       if (p.status !== 'Selesai') return false;
       if (p.tanggal_selesai) {
@@ -62,22 +57,17 @@ export default function PengembalianPage() {
       return false;
     })
 
-    return { mendekati, aktif, selesai }
+    return { mendekati, selesai }
   }, [aktifList, allPeminjaman, now])
 
   // ─── Search filter ─────────────────────────────────────
-  const filterBySearch = (list: typeof aktifList) =>
-    list.filter((p) =>
+  const currentList = useMemo(() => {
+    const raw = activeTab === 'Mendekati Tenggat' ? tabData.mendekati : tabData.selesai
+    return raw.filter((p) =>
       p.kode_peminjaman.toLowerCase().includes(search.toLowerCase()) ||
       p.anggota_nama.toLowerCase().includes(search.toLowerCase()) ||
       p.buku_judul.toLowerCase().includes(search.toLowerCase())
     )
-
-  const currentList = useMemo(() => {
-    const raw = activeTab === 'Mendekati Tenggat' ? tabData.mendekati
-      : activeTab === 'Aktif' ? tabData.aktif
-      : tabData.selesai
-    return filterBySearch(raw)
   }, [activeTab, tabData, search])
 
   const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);

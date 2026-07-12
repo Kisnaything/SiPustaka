@@ -319,22 +319,38 @@ export default function LaporanPage() {
                 dailyCounts[date] = (dailyCounts[date] || 0) + 1;
               });
 
-              const sortedDates = Object.keys(dailyCounts).sort();
+              // Tampilkan 7 hari kalender terakhir (termasuk yg 0 transaksi)
+              const today = new Date();
+              const displayDates: string[] = [];
+              for (let i = 6; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                displayDates.push(d.toISOString().split('T')[0]);
+              }
+
               const maxCount = Math.max(...Object.values(dailyCounts), 1);
-              const displayDates = sortedDates.slice(-7); // 7 hari terakhir
 
               return displayDates.map((date) => {
                 const count = dailyCounts[date] || 0;
                 const height = (count / maxCount) * 100;
+                const isToday = date === today.toISOString().split('T')[0];
                 return (
                   <div key={date} className="flex flex-col items-center flex-1">
-                    <div
-                      className="w-full max-w-[36px] rounded-t-md bg-[#F5A623]/80 hover:bg-[#F5A623] transition-colors"
-                      style={{ height: `${Math.max(height, 4)}%` }}
-                    />
-                    <span className="text-[10px] text-[#585F6C] mt-1">
+                    <div className="relative w-full max-w-[36px] flex flex-col items-center">
+                      <span className="text-[9px] text-[#585F6C] mb-1 font-medium">
+                        {count}
+                      </span>
+                      <div
+                        className={`w-full rounded-t-md transition-colors ${
+                          count > 0 ? 'bg-[#F5A623]/80 hover:bg-[#F5A623]' : 'bg-[#F3F4F6]'
+                        }`}
+                        style={{ height: `${Math.max(height, count > 0 ? 4 : 2)}%` }}
+                      />
+                    </div>
+                    <span className={`text-[10px] mt-1 ${isToday ? 'font-bold text-[#111827]' : 'text-[#585F6C]'}`}>
                       {new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                     </span>
+                    {isToday && <span className="text-[8px] text-[#F5A623] font-semibold">Hari ini</span>}
                   </div>
                 );
               });

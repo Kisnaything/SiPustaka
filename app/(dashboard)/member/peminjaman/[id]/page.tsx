@@ -51,9 +51,17 @@ const coverColors = ['#C8B89A', '#6B7E8F', '#8FA68B', '#D4A574', '#7B9BB5', '#A8
 export default function DetailPeminjamanPage() {
   const params = useParams();
   const id = params.id as string;
-  const data = usePeminjamanById(id);
+  const { data, loading } = usePeminjamanById(id);
   const pengaturan = usePengaturan();
   const isMobile = useMobile();
+
+  if (loading) {
+    return (
+      <div style={{ padding: '48px', textAlign: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <p style={{ color: '#6B7280' }}>Memuat data peminjaman...</p>
+      </div>
+    );
+  }
 
   if (!data) {
     return (

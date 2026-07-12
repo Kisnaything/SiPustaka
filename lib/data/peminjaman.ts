@@ -240,7 +240,7 @@ export async function batalkanPeminjaman(kode: string): Promise<{
   }
 }
 
-export async function selesaikanPeminjaman(id: string): Promise<{
+export async function selesaikanPeminjaman(id: string, dendaPerHari = 2000): Promise<{
   success: boolean
   message: string
   denda?: number
@@ -261,7 +261,7 @@ export async function selesaikanPeminjaman(id: string): Promise<{
         hariTerlambat = Math.ceil(
           (now.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24)
         )
-        denda = hariTerlambat * 2000
+        denda = hariTerlambat * dendaPerHari
       }
     }
 

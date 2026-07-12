@@ -29,7 +29,7 @@ export default function PengembalianPage() {
   const handleKonfirmasiKembali = async (id: string) => {
     if (!confirm('Yakin buku ini sudah dikembalikan?')) return;
 
-    const result = await selesaikanPeminjaman(id);
+    const result = await selesaikanPeminjaman(id, pengaturan.denda_per_hari);
     setMessage({
       type: result.success ? 'success' : 'error',
       text: result.message,

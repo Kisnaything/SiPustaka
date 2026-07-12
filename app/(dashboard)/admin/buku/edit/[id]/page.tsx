@@ -117,7 +117,7 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!judul || !penulis || !kategori) {
       alert('Harap lengkapi field yang wajib (judul, penulis, kategori)');
       return;
@@ -142,7 +142,7 @@ function EditBukuForm({ book, id }: { book: Buku; id: string }) {
       updatedData.preview = previewBase64;
     }
 
-    updateBook(id, updatedData);
+    await updateBook(id, updatedData);
     router.push('/admin/buku');
   };
 

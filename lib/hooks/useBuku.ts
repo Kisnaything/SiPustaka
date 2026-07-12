@@ -7,16 +7,20 @@ export function useBuku() {
 
   useEffect(() => {
     let cancelled = false
-    getBooks().then(data => {
-      if (!cancelled) {
-        setBooks(data)
-        setLoading(false)
-      }
-    })
+    getBooks()
+      .then(data => {
+        if (!cancelled) {
+          setBooks(data)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => { cancelled = true }
   }, [])
 
-  return { books, loading, refetch: () => getBooks().then(data => setBooks(data)) }
+  return { books, loading, refetch: () => getBooks().then(data => setBooks(data)).catch(() => {}) }
 }
 
 export function useBukuById(id: string) {
@@ -26,14 +30,18 @@ export function useBukuById(id: string) {
   useEffect(() => {
     if (!id) return
     let cancelled = false
-    getBookById(id).then(data => {
-      if (!cancelled) {
-        setBook(data)
-        setLoading(false)
-      }
-    })
+    getBookById(id)
+      .then(data => {
+        if (!cancelled) {
+          setBook(data)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => { cancelled = true }
   }, [id])
 
-  return { book, loading, refetch: () => getBookById(id).then(data => setBook(data)) }
+  return { book, loading, refetch: () => getBookById(id).then(data => setBook(data)).catch(() => {}) }
 }

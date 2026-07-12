@@ -9,7 +9,9 @@ export function usePengaturan() {
   }))
 
   const refresh = useCallback(() => {
-    getPengaturan().then(setData)
+    getPengaturan()
+      .then(setData)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {

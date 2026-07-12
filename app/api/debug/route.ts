@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response(null, { status: 404 });
+  }
+
   const results: Record<string, unknown> = {};
 
   try {

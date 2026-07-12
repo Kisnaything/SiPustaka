@@ -5,7 +5,9 @@ export function useNotifikasi() {
   const [data, setData] = useState<Notifikasi[]>([])
 
   const refresh = useCallback(() => {
-    getNotifikasi().then(setData)
+    getNotifikasi()
+      .then(setData)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {

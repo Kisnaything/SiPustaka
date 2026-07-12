@@ -50,21 +50,23 @@ export default function DetailBukuPage() {
   const [pesanBlokir, setPesanBlokir] = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user) {
-        const list = await getPeminjamanByAnggota(user.id)
-        const now = new Date()
-        const overdue = list.filter(
-          (p) => p.status === 'Aktif' && p.jatuh_tempo && new Date(p.jatuh_tempo) < now
-        )
-        if (overdue.length > 0) {
-          setTerblokir(true)
-          setPesanBlokir(
-            `Kamu memiliki ${overdue.length} buku yang telat dikembalikan. Selesaikan pengembalian dan denda terlebih dahulu.`
+    supabase.auth.getUser()
+      .then(async ({ data: { user } }) => {
+        if (user) {
+          const list = await getPeminjamanByAnggota(user.id)
+          const now = new Date()
+          const overdue = list.filter(
+            (p) => p.status === 'Aktif' && p.jatuh_tempo && new Date(p.jatuh_tempo) < now
           )
+          if (overdue.length > 0) {
+            setTerblokir(true)
+            setPesanBlokir(
+              `Kamu memiliki ${overdue.length} buku yang telat dikembalikan. Selesaikan pengembalian dan denda terlebih dahulu.`
+            )
+          }
         }
-      }
-    })
+      })
+      .catch(() => {})
   }, [])
 
   if (loading) {
@@ -83,7 +85,7 @@ export default function DetailBukuPage() {
   }
 
   const habis = buku.stok === 0
-  const colorIndex = parseInt(buku.id) % coverColors.length
+  const colorIndex = Math.abs(buku.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % coverColors.length
 
   return (
     <div style={{ padding: '24px 32px', fontFamily: "'Plus Jakarta Sans', sans-serif", maxWidth: '1280px' }}>

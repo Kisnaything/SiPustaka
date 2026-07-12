@@ -12,7 +12,9 @@ export function usePeminjaman() {
   const [data, setData] = useState<Peminjaman[]>([])
 
   const refresh = useCallback(() => {
-    getPeminjaman().then(setData)
+    getPeminjaman()
+      .then(setData)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -26,7 +28,9 @@ export function usePeminjamanMenunggu() {
   const [data, setData] = useState<Peminjaman[]>([])
 
   const refresh = useCallback(() => {
-    getPeminjamanMenunggu().then(setData)
+    getPeminjamanMenunggu()
+      .then(setData)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -40,7 +44,9 @@ export function usePeminjamanAktif() {
   const [data, setData] = useState<Peminjaman[]>([])
 
   const refresh = useCallback(() => {
-    getPeminjamanAktif().then(setData)
+    getPeminjamanAktif()
+      .then(setData)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -51,29 +57,41 @@ export function usePeminjamanAktif() {
 }
 
 export function usePeminjamanById(id: string) {
-  const [data, setData] = useState<Peminjaman | undefined>()
+  const [data, setData] = useState<Peminjaman | null | undefined>(undefined)
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(() => {
-    if (id) getPeminjamanById(id).then((d) => setData(d ?? undefined))
+    if (!id) return
+    setLoading(true)
+    getPeminjamanById(id)
+      .then((d) => setData(d ?? null))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [id])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  return data
+  return { data, loading, refresh }
 }
 
 export function usePeminjamanByKode(kode: string) {
-  const [data, setData] = useState<Peminjaman | undefined>()
+  const [data, setData] = useState<Peminjaman | null | undefined>(undefined)
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(() => {
-    if (kode) getPeminjamanByKode(kode).then((d) => setData(d ?? undefined))
+    if (!kode) return
+    setLoading(true)
+    getPeminjamanByKode(kode)
+      .then((d) => setData(d ?? null))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [kode])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  return data
+  return { data, loading, refresh }
 }

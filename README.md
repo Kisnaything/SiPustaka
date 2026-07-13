@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SiPustaka — Sistem Informasi Perpustakaan
 
-## Getting Started
+Aplikasi web manajemen perpustakaan berbasis Next.js + Supabase.
+Punya dua role (Admin & Member) dengan fitur peminjaman,
+pengembalian, denda, laporan, dan verifikasi anggota.
 
-First, run the development server:
+## Fitur
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 📚 **Katalog Buku** — Cari buku, filter genre, lihat detail & stok
+- 📖 **Peminjaman** — Keranjang → Pinjam → Riwayat peminjaman
+- 💰 **Denda** — Upload bukti bayar, verifikasi oleh admin
+- 📊 **Laporan** — Grafik tren 7 hari + export data ke CSV
+- 👥 **Manajemen Anggota** — CRUD anggota, verifikasi pendaftar baru
+- 🖼️ **Cover Buku** — Cover otomatis dari Open Library API
+- 📱 **Responsive** — Mobile-friendly dengan sidebar hamburger
+
+## Tech Stack
+
+| Layer | Teknologi |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Bahasa | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Database | Supabase (PostgreSQL) |
+| Autentikasi | Supabase SSR Auth |
+| Icons | Tabler Icons + Lucide React |
+| Deployment | Vercel |
+
+## Cara Menggunakan
+
+Akses langsung melalui link berikut:
+
+**🔗 https://sipustaka-kappa.vercel.app**
+
+- **Admin** — Login menggunakan akun admin yang sudah didaftarkan
+- **Member** — Daftar akun baru melalui halaman registrasi, lalu tunggu verifikasi admin
+
+## Struktur Folder
+
+```
+sipustaka/
+├── app/
+│   ├── (auth)/           # Landing, login, register
+│   ├── (dashboard)/
+│   │   ├── admin/        # Dashboard admin (10 halaman)
+│   │   └── member/       # Dashboard member (6 halaman)
+│   ├── api/              # API routes (norek, data, auth)
+│   └── page.tsx          # Landing page
+├── components/           # UI components (Sidebar, Pagination)
+├── lib/                  # Data layer, hooks, Supabase clients
+├── scripts/              # Seed data dan utilitas
+└── public/               # Aset statis
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Lisensi
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Project ini dibuat untuk keperluan tugas mata kuliah.
